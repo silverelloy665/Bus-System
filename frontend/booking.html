@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking - BusBooking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <style>
+        #map { height: 300px; width: 100%; border-radius: 0.5rem; margin-bottom: 20px;}
+    </style>
+</head>
+<body class="bg-gray-100 font-sans text-gray-900">
+    <nav class="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center">
+        <h1 class="text-2xl font-bold cursor-pointer" onclick="window.location.href='index.html'">BusBooking</h1>
+        <div>
+            <a href="index.html" class="hover:underline" onclick="localStorage.removeItem('currentUser')">Logout</a>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto mt-8 bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-2xl font-bold mb-6">Live Bus Map & Booking</h2>
+        
+        <div id="map"></div>
+
+        <div class="mb-5">
+            <label class="block font-bold mb-2">Available Nearby Buses</label>
+            <div id="busList" class="p-3 bg-gray-50 border rounded text-sm mb-2 text-gray-700">Loading nearby buses...</div>
+            <select id="busSelect" class="w-full p-2 border rounded">
+                <option value="">-- Select a Bus --</option>
+            </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-5">
+            <div>
+                <label class="block font-bold mb-2">From Stop ID:</label>
+                <input type="number" id="fromStop" value="1" class="w-full p-2 border rounded">
+            </div>
+            <div>
+                <label class="block font-bold mb-2">To Stop ID:</label>
+                <input type="number" id="toStop" value="5" class="w-full p-2 border rounded" onchange="updateFare()">
+            </div>
+        </div>
+
+        <div class="mb-5 p-4 bg-blue-50 border border-blue-200 rounded">
+            <div class="flex justify-between items-center">
+                <span class="font-bold text-lg">Total Fare:</span>
+                <span id="fareDisplay" class="font-bold text-2xl text-blue-700">₹0.00</span>
+            </div>
+            <p class="text-sm text-blue-600 mt-1" id="peakIndicator">Dynamic pricing applies based on route and time.</p>
+        </div>
+
+        <div class="mb-6">
+            <label class="block font-bold mb-2">Payment Method</label>
+            <div class="flex gap-4">
+                <label class="flex items-center"><input type="radio" name="payment" value="ONLINE" class="mr-2" checked> Online Payment</label>
+                <label class="flex items-center"><input type="radio" name="payment" value="CASH" class="mr-2"> Cash to Conductor</label>
+            </div>
+        </div>
+
+        <button onclick="submitBooking()" class="w-full bg-green-600 text-white text-lg font-bold p-3 rounded shadow hover:bg-green-700">
+            Confirm Booking
+        </button>
+        <p id="statusMsg" class="mt-4 text-center font-bold"></p>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="api.js"></script>
+    <script src="map.js"></script>
+    <script>
+        let currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentUser) {
+            window.location.href = 'index.html';
+        }
+
+        async function loadBuses() {
+            try {
+                // Approximate default or user location
+                const lat = currentUser.currentLat || 12.9716;
+                const lng = currentUser.currentLng || 77.5946;
+                
+                const buses = await api.getNearbyBuses(lat, lng);
+                const busSelect = document.getElementById('busSelect');
+                document.getElementById('busList').innerText = `Found ${buses.length} buses nearby!`;
+                
+                buses.forEach(b => {
+                    const opt = document.createElement('option');
+                    opt.value = b.id;
+                    opt.text = `Bus #${b.id} (Route ${b.routeId})`;
+                    busSelect.add(opt);
+                });
+                updateFare(); // initial load
+            } catch(e) {
+                document.getElementById('busList').innerText = 'Failed to load buses.';
+            }
+        }
+
+        async function updateFare() {
+            // Rough simulation using routeId = 1 temporarily
+            try {
+                const fare = await api.calculateFare(1);
+                document.getElementById('fareDisplay').innerText = `₹${fare.toFixed(2)}`;
+            } catch(e) {
+                console.warn("Could not calculate fare dynamically");
+            }
+        }
+
+        async function submitBooking() {
+            const busId = document.getElementById('busSelect').value;
+            if(!busId) {
+                alert("Please select a bus!"); return;
+            }
+            
+            const booking = {
+                userId: currentUser.id,
+                busId: parseInt(busId),
+                status: "CONFIRMED"
+            };
+
+            const statusMsg = document.getElementById('statusMsg');
+            try {
+                const res = await api.createBooking(booking);
+                statusMsg.className = "mt-4 text-center font-bold text-green-600";
+                statusMsg.innerText = `Success! Booking ID: #${res.id}`;
+            } catch(e) {
+                statusMsg.className = "mt-4 text-center font-bold text-red-600";
+                statusMsg.innerText = `Failed to create booking.`;
+            }
+        }
+
+        // Init
+        const lat = currentUser?.currentLat || 12.9716;
+        const lng = currentUser?.currentLng || 77.5946;
+        initMap(lat, lng);
+        loadBuses();
+    </script>
+</body>
+</html>
