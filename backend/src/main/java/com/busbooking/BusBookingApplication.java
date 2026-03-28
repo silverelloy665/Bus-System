@@ -23,6 +23,7 @@ public class BusBookingApplication {
     }
 
     @Bean
+    @SuppressWarnings("null")
     public CommandLineRunner initData(
             StopRepository stopRepository,
             RouteRepository routeRepository,

@@ -11,6 +11,9 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
     public User registerUser(User user) {
+        if (user.getRole() == null) {
+            user.setRole("CUSTOMER");
+        }
         return userRepository.save(user);
     }
     public List<User> getAllUsers() {

@@ -1,0 +1,59 @@
+package com.busbooking.config;
+
+import com.busbooking.dao.BusRepository;
+import com.busbooking.dao.RouteRepository;
+import com.busbooking.dao.StopRepository;
+import com.busbooking.dao.UserRepository;
+import com.busbooking.model.Bus;
+import com.busbooking.model.Route;
+import com.busbooking.model.Stop;
+import com.busbooking.model.User;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
+
+@Configuration
+public class DataSeeder {
+
+    @Bean
+    @SuppressWarnings("null")
+    public CommandLineRunner seedData(UserRepository userRepository, 
+                                      BusRepository busRepository, 
+                                      RouteRepository routeRepository,
+                                      StopRepository stopRepository) {
+        return args -> {
+            // Seed Admin User
+            if (userRepository.findAll().stream().noneMatch(u -> "admin".equals(u.getUsername()))) {
+                User admin = new User();
+                admin.setUsername("admin");
+                admin.setPasswordHash("admin123");
+                admin.setRole("ADMIN");
+                userRepository.save(admin);
+            }
+
+            // Seed sample stops if empty
+            if (stopRepository.count() == 0) {
+                Stop s1 = Stop.builder().name("Mumbai Central").lat(18.9690).lng(72.8205).city("Mumbai").state("Maharashtra").isActive(true).build();
+                Stop s2 = Stop.builder().name("Pune Swargate").lat(18.5018).lng(73.8636).city("Pune").state("Maharashtra").isActive(true).build();
+                Stop s3 = Stop.builder().name("Bangalore Majestic").lat(12.9569).lng(77.5703).city("Bangalore").state("Karnataka").isActive(true).build();
+                s1 = stopRepository.save(s1);
+                s2 = stopRepository.save(s2);
+                s3 = stopRepository.save(s3);
+
+                // Seed sample routes
+                Route r1 = Route.builder().name("Mumbai - Pune Express").startStopId(s1.getStopId()).endStopId(s2.getStopId()).distanceKm(150.0).estimatedDurationMinutes(180).isActive(true).routeType("EXPRESS").build();
+                Route r2 = Route.builder().name("Pune - Bangalore Sleeper").startStopId(s2.getStopId()).endStopId(s3.getStopId()).distanceKm(840.0).estimatedDurationMinutes(800).isActive(true).routeType("SLEEPER").build();
+                r1 = routeRepository.save(r1);
+                r2 = routeRepository.save(r2);
+
+                // Seed sample buses
+                Bus b1 = Bus.builder().driverName("Ramesh").registrationNumber("MH-01-AB-1234").capacity(40).status("ACTIVE").currentLat(18.9690).currentLng(72.8205).routeId(r1.getRouteId()).build();
+                Bus b2 = Bus.builder().driverName("Suresh").registrationNumber("MH-12-CD-5678").capacity(45).status("ACTIVE").currentLat(18.5018).currentLng(73.8636).routeId(r2.getRouteId()).build();
+                Bus b3 = Bus.builder().driverName("Mahesh").registrationNumber("KA-01-EF-9012").capacity(30).status("ACTIVE").currentLat(12.9569).currentLng(77.5703).routeId(r1.getRouteId()).build();
+                busRepository.saveAll(List.of(b1, b2, b3));
+            }
+        };
+    }
+}

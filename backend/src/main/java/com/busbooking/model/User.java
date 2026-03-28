@@ -15,7 +15,7 @@ import lombok.Builder;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "users")
+@Table(name = "app_users")
 public class User {
 
     @Id
@@ -40,6 +40,9 @@ public class User {
 
     @Column(name = "current_lng")
     private Double currentLng;
+
+    @Column(name = "role")
+    private String role; // e.g., "CUSTOMER" or "ADMIN"
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Long createdAt;

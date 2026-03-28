@@ -1,118 +1,161 @@
-<!DOCTYPE html>
-<html lang="en">
+﻿<!DOCTYPE html>
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - BusBooking</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <style>
+        body { transition: background-color 0.3s ease, color 0.3s ease; }
+        #map { height: 400px; width: 100%; border-radius: 0.5rem; }
+    </style>
 </head>
-<body class="bg-gray-100 font-sans text-gray-900">
-    <nav class="bg-gray-900 text-white p-4 shadow-md flex justify-between items-center">
-        <h1 class="text-2xl font-bold">BusBooking Admin</h1>
-        <div><button onclick="window.location.href='index.html'" class="hover:underline">Customer Site</button></div>
+<body class="bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100 font-sans min-h-screen">
+    <nav class="bg-indigo-700 dark:bg-indigo-900 text-white p-4 shadow-lg flex justify-between items-center transition-colors">
+        <h1 class="text-2xl font-black tracking-tight" onclick="window.location.href='index.html'">👨‍💼 Admin Console</h1>
+        <div class="flex items-center gap-4">
+            <button onclick="toggleTheme()" class="px-4 py-2 rounded-full bg-indigo-600 dark:bg-indigo-700 hover:opacity-80 transition shadow-inner font-semibold">
+                <span id="themeIcon">☀️ Light Mode</span>
+            </button>
+            <a href="index.html" class="hover:underline font-bold" onclick="localStorage.removeItem('currentUser')">Logout</a>
+        </div>
     </nav>
 
-    <!-- Admin content container -->
-    <div class="max-w-6xl mx-auto mt-6 px-4">
-        
-        <h2 class="text-2xl font-bold mb-4">Operations Dashboard</h2>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-            <!-- Route Management -->
-            <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-indigo-600">
-                <h3 class="text-xl font-bold mb-4">Create New Route</h3>
-                <div class="mb-3">
-                    <label class="block font-bold mb-1">Route Name:</label>
-                    <input type="text" class="w-full p-2 border rounded" placeholder="e.g. IT Park Express">
-                </div>
-                <div class="mb-3">
-                    <label class="block font-bold mb-1">Stops (comma separated IDs):</label>
-                    <input type="text" class="w-full p-2 border rounded" placeholder="1, 8, 12, 19">
-                </div>
-                <div class="mb-3">
-                    <label class="flex items-center text-sm font-bold text-gray-700">
-                        <input type="checkbox" class="mr-2"> Enable AI-Assisted Stop Optimization
-                    </label>
-                </div>
-                <button class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Save Route</button>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-7xl mx-auto mt-8 p-4">
+        <!-- Map Panel -->
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl border dark:border-gray-700">
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">📍 Geo Live Tracking</h2>
+            <div id="map" class="shadow-inner border dark:border-gray-700"></div>
+            <p class="text-sm mt-3 text-gray-500 font-medium">* Click on map to add a new stop coordinate.</p>
+            <div class="mt-4 flex gap-4">
+                <button onclick="loadStopsOnMap()" class="bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200 font-bold px-4 py-2 rounded-lg hover:bg-indigo-200 transition">Refresh Stops</button>
             </div>
+        </div>
 
-            <!-- Fare Management -->
-            <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-red-500">
-                <h3 class="text-xl font-bold mb-4">Fare Management</h3>
-                <div class="mb-4">
-                    <label class="block font-bold mb-2">Select Route:</label>
-                    <div class="flex gap-2">
-                        <input type="number" id="fareRouteId" placeholder="Route ID" value="1" class="w-24 p-2 border rounded">
-                        <button onclick="getSuggestedFare()" class="bg-gray-200 px-3 py-2 rounded hover:bg-gray-300">Get Suggested</button>
-                    </div>
+        <!-- Management Panel -->
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl border dark:border-gray-700 space-y-8">
+            
+            <section class="bg-gray-50 dark:bg-gray-750 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-600">
+                <h3 class="font-extrabold text-lg mb-4 text-indigo-700 dark:text-indigo-400">1. Create Stop</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" id="stopName" placeholder="Stop Name" class="p-3 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <input type="text" id="stopLat" placeholder="Lat (Click Map)" class="p-3 border dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-600 cursor-not-allowed" readonly>
+                    <input type="text" id="stopLng" placeholder="Lng (Click Map)" class="p-3 border dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-600 cursor-not-allowed" readonly>
+                    <button onclick="createNewStop()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow transform active:scale-95 transition">Add Stop</button>
                 </div>
-                
-                <div class="bg-gray-50 border p-3 rounded mb-4">
-                    <p class="text-sm text-gray-500">System Suggested Base Fare:</p>
-                    <p id="suggestedFare" class="text-2xl font-bold">₹0.00</p>
+            </section>
+
+            <section class="bg-gray-50 dark:bg-gray-750 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-600">
+                <h3 class="font-extrabold text-lg mb-4 text-indigo-700 dark:text-indigo-400">2. Define Route</h3>
+                <div class="flex gap-4">
+                    <input type="text" id="routeName" placeholder="Route Name" class="flex-1 p-3 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <button onclick="createRoute()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2 rounded-lg shadow transform active:scale-95 transition">Create Route</button>
                 </div>
+            </section>
 
-                <div class="mb-4">
-                    <label class="block font-bold mb-1">Override Base Fare (₹):</label>
-                    <input type="number" id="newFare" placeholder="Enter new fare" class="w-full p-2 border rounded">
+             <section class="bg-gray-50 dark:bg-gray-750 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-600">
+                <h3 class="font-extrabold text-lg mb-4 text-indigo-700 dark:text-indigo-400">3. Apply Fare Matrix</h3>
+                <div class="grid grid-cols-3 gap-4">
+                    <input type="number" id="fRouteId" placeholder="Route ID" class="p-3 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <input type="number" step="0.01" id="fBaseAmt" placeholder="Base Fare (₹)" class="p-3 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <input type="number" step="0.01" id="fPerKm" placeholder="Per KM (₹)" class="p-3 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none">
                 </div>
-
-                <button onclick="applyFare()" class="w-full bg-red-500 text-white font-bold p-2 rounded hover:bg-red-600">
-                    Apply Override
-                </button>
-
-                <div id="fareWarning" class="mt-4 hidden p-3 rounded font-bold"></div>
-            </div>
-
+                <button onclick="applyFare()" class="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg shadow transform active:scale-95 transition">Save Fare Profile</button>
+            </section>
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="api.js"></script>
+    <script src="map.js"></script>
     <script>
-        let currentSuggested = 0;
-
-        async function getSuggestedFare() {
-            const routeId = document.getElementById('fareRouteId').value;
-            try {
-                // Using standard suggest endpoint
-                const fare = await api.calculateFare(routeId); // or suggestFare if mapped, currently calculateFare handles base logic
-                currentSuggested = fare;
-                document.getElementById('suggestedFare').innerText = `₹${fare.toFixed(2)}`;
-                document.getElementById('newFare').value = fare.toFixed(2);
-            } catch(e) {
-                alert("Failed to fetch suggested fare");
+        function toggleTheme() {
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                document.getElementById('themeIcon').innerText = '🌙 Dark Mode';
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.add('dark');
+                document.getElementById('themeIcon').innerText = '☀️ Light Mode';
+                localStorage.setItem('theme', 'dark');
             }
         }
 
-        async function applyFare() {
-            const newFare = parseFloat(document.getElementById('newFare').value);
-            const warningBox = document.getElementById('fareWarning');
+        if (localStorage.getItem('theme') === 'light') {
+            const html = document.documentElement;
+            html.classList.remove('dark');
+            document.getElementById('themeIcon').innerText = '🌙 Dark Mode';
+        }
+
+        let currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentUser || currentUser.role !== 'ADMIN') {
+            window.location.href = 'index.html';
+        }
+
+        // Init admin map over central hub
+        initMap(19.0760, 72.8777); 
+
+        // Let admin click map to select coordinates for new stop
+        map.on('click', function(e) {
+            document.getElementById('stopLat').value = e.latlng.lat.toFixed(6);
+            document.getElementById('stopLng').value = e.latlng.lng.toFixed(6);
             
-            if(!currentSuggested) {
-                alert("Please get suggested fare first!"); return; 
-            }
+            // Temporary marker to show where they clicked
+            L.marker([e.latlng.lat, e.latlng.lng]).addTo(map)
+                .bindPopup("New Stop Location").openPopup();
+        });
+
+        async function createNewStop() {
+            const name = document.getElementById('stopName').value;
+            const lat = document.getElementById('stopLat').value;
+            const lng = document.getElementById('stopLng').value;
+
+            if(!name || !lat || !lng) return alert("Fill all fields or click map for Lat/Lng");
 
             try {
-                const validationMsg = await api.validateFare(currentSuggested, newFare);
-                
-                warningBox.classList.remove('hidden', 'bg-yellow-100', 'text-yellow-800', 'bg-red-100', 'text-red-800', 'bg-green-100', 'text-green-800');
-                
-                if (validationMsg.includes("Loss")) {
-                    warningBox.innerText = `⚠️ ${validationMsg} - Fare is too low!`;
-                    warningBox.classList.add('bg-yellow-100', 'text-yellow-800');
-                } else if (validationMsg.includes("Unethical")) {
-                    warningBox.innerText = `🚨 ${validationMsg} - Fare is too high!`;
-                    warningBox.classList.add('bg-red-100', 'text-red-800');
-                } else {
-                    warningBox.innerText = `✅ Success: Fare Override Approved!`;
-                    warningBox.classList.add('bg-green-100', 'text-green-800');
-                }
-            } catch(e) {
-                alert("Validation service failed");
-            }
+                const s = await api.createStop({
+                    name: name,
+                    latitude: parseFloat(lat),
+                    longitude: parseFloat(lng)
+                });
+                alert(`Created Stop ID: #${s.id}`);
+                loadStopsOnMap(); // Refresh
+            } catch(e) { alert("Failed to create stop"); }
+        }
+
+        async function createRoute() {
+            const name = document.getElementById('routeName').value;
+            if(!name) return alert("Name required");
+            try {
+                const r = await api.createRoute({ name });
+                alert(`Created Route ID: #${r.id}`);
+            } catch(e) { alert("Failed"); }
+        }
+
+        async function applyFare() {
+            try {
+                await api.createFare({
+                    routeId: parseInt(document.getElementById('fRouteId').value),
+                    baseAmount: parseFloat(document.getElementById('fBaseAmt').value),
+                    perKmRate: parseFloat(document.getElementById('fPerKm').value),
+                    peakMultiplier: 1.0
+                });
+                alert("Fare saved!");
+            } catch(e) { alert("Failed"); }
+        }
+
+        async function loadStopsOnMap() {
+            // Depending on Backend, might need GET /stops or similar. 
+            // If API not explicit, we just alert for now.
+            alert("Loaded stops to map (requires backend GET /api/stops implementation)");
         }
     </script>
 </body>

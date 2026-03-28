@@ -1,134 +1,283 @@
-<!DOCTYPE html>
-<html lang="en">
+﻿<!DOCTYPE html>
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Landing - BusBooking</title>
-    <!-- Tailwind CSS -->
+    <title>BusBooking - Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
     <style>
-        #map { height: 400px; width: 100%; border-radius: 0.5rem; }
+        body { transition: background-color 0.3s ease, color 0.3s ease; }
+        .glass { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.2); }
+        .dark .glass { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
-<body class="bg-gray-100 font-sans text-gray-900">
-    <nav class="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center">
-        <h1 class="text-2xl font-bold">BusBooking</h1>
-        <div id="authLinks">
-            <button onclick="toggleAuth()" class="hover:underline">Login / Register</button>
-        </div>
+<body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex flex-col font-sans">
+    <nav class="bg-blue-600 dark:bg-gray-800 text-white p-4 shadow-lg flex justify-between items-center transition-colors duration-300">
+        <h1 class="text-2xl font-extrabold tracking-tight flex items-center gap-2">🚍 BusBooking</h1>
+        <button onclick="toggleTheme()" class="px-4 py-2 rounded-full bg-blue-700 dark:bg-gray-700 hover:opacity-80 transition shadow-inner font-semibold">
+            <span id="themeIcon">☀️ Light Mode</span>
+        </button>
     </nav>
 
-    <!-- Auth Modal / Form Container -->
-    <div id="authContainer" class="max-w-md mx-auto mt-8 bg-white p-6 rounded-lg shadow-md">
-        <h2 class="text-xl font-bold mb-4">Login or Register</h2>
-        
-        <label for="username" class="sr-only">Username</label>
-        <input type="text" id="username" autocomplete="username" placeholder="Username" class="w-full mb-3 p-2 border rounded">
-        
-        <label for="phone" class="sr-only">Phone</label>
-        <input type="tel" id="phone" autocomplete="tel" placeholder="Phone" class="w-full mb-3 p-2 border rounded">
-        
-        <label for="password" class="sr-only">Password</label>
-        <input type="password" id="password" autocomplete="current-password" placeholder="Password" class="w-full mb-4 p-2 border rounded">
-        
-        <div class="flex gap-2">
-            <button onclick="handleLogin()" class="flex-1 bg-blue-600 text-white rounded p-2 hover:bg-blue-700">Login</button>
-            <button onclick="handleRegister()" class="flex-1 bg-green-600 text-white rounded p-2 hover:bg-green-700">Register</button>
-        </div>
-        <p id="authMsg" class="text-red-500 mt-2 text-sm"></p>
-    </div>
-
-    <!-- Main Dashboard Container (Hidden by default) -->
-    <div id="mainApp" class="hidden max-w-4xl mx-auto mt-6 px-4">
-        <p class="text-lg mb-4">Welcome back, <span id="welcomeName" class="font-bold"></span>!</p>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="md:col-span-2">
-                <div class="bg-white p-4 rounded-lg shadow-md mb-6">
-                    <h3 class="text-lg font-bold mb-3">Live Bus Map</h3>
-                    <div id="map"></div>
-                </div>
-            </div>
+    <div class="flex-grow flex items-center justify-center p-4 bg-gradient-to-br from-blue-100 to-indigo-200 dark:from-gray-800 dark:to-gray-900">
+        <div id="authContainer" class="glass w-full max-w-lg p-8 rounded-2xl shadow-2xl relative overflow-hidden transition-all duration-300">
+            <!-- Top Accent Line -->
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-400 to-indigo-500"></div>
             
-            <div>
-                <div class="bg-white p-4 rounded-lg shadow-md">
-                    <h3 class="text-lg font-bold mb-3">Quick Actions</h3>
-                    <button onclick="window.location.href='booking.html'" class="w-full bg-blue-600 text-white rounded p-3 text-lg font-bold hover:bg-blue-700 mb-3 shadow">
-                        Book a Bus
-                    </button>
-                    <!-- Simulated Fare Check Tool -->
-                    <div class="border-t pt-3 mt-3">
-                        <label class="block text-sm font-semibold mb-1">Check Dynamic Fare</label>
-                        <select id="routeSelect" class="w-full p-2 border rounded mb-2">
-                            <option value="1">Route 1 (Downtown)</option>
-                            <option value="2">Route 2 (Suburbs)</option>
+            <h2 id="formTitle" class="text-3xl font-bold mb-6 text-center">Welcome Back</h2>
+            
+            <!-- Toggle Login / Register / Admin -->
+            <div class="flex bg-gray-200 dark:bg-gray-800 rounded-lg p-1 mb-6 shadow-inner text-sm sm:text-base">
+                <button id="btnTabLogin" onclick="switchTab('login')" class="flex-1 py-2 rounded-md font-bold shadow bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 transition-all">Login</button>
+                <button id="btnTabRegister" onclick="switchTab('register')" class="flex-1 py-2 rounded-md font-bold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-all">Register</button>
+                <button id="btnTabAdmin" onclick="switchTab('admin')" class="flex-1 py-2 rounded-md font-bold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-all">Admin</button>
+            </div>
+
+            <div class="space-y-4 relative">
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Username</label>
+                    <input type="text" id="username" class="w-full p-3 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="Enter your username">
+                </div>
+
+                <div id="registerFields" class="hidden space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Phone Number</label>
+                        <input type="tel" id="phone" class="w-full p-3 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="10-digit mobile number">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">State</label>
+                            <select id="state" onchange="updateCities()" class="w-full p-3 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="">Select State</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">City</label>
+                            <select id="city" onchange="updateAreas()" class="w-full p-3 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="">Select City</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Area / Locality</label>
+                        <select id="area" class="w-full p-3 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">Select Area</option>
                         </select>
-                        <button onclick="checkFare()" class="w-full bg-gray-200 text-gray-800 rounded p-2 hover:bg-gray-300">Check</button>
-                        <p id="fareDisplay" class="font-bold text-blue-600 mt-2 text-lg"></p>
                     </div>
                 </div>
+
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Password</label>
+                    <input type="password" id="password" class="w-full p-3 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="Min 6 characters">
+                </div>
+
+                <p id="authMsg" class="text-red-500 dark:text-red-400 font-semibold text-center text-sm min-h-[20px]"></p>
+
+                <button id="submitBtn" onclick="submitAuth()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold p-3 rounded-lg shadow-lg transform active:scale-[0.98] transition-all">
+                    Log In
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Our Scripts -->
     <script src="api.js"></script>
-    <script src="map.js"></script>
     <script>
-        let currentUser = null;
+        // Location Data for Dropdowns
+        const locationData = {
+            "Maharashtra": {
+                "Mumbai": ["Bandra West", "Andheri East", "Dadar", "Juhu", "Colaba"],
+                "Pune": ["Kothrud", "Hinjewadi", "Shivajinagar", "Viman Nagar"]
+            },
+            "Karnataka": {
+                "Bengaluru": ["Koramangala", "Indiranagar", "Whitefield", "Jayanagar"],
+                "Mysuru": ["Vijayanagar", "Gokulam", "Saraswathipuram"]
+            },
+            "Delhi": {
+                "New Delhi": ["Connaught Place", "Hauz Khas", "Saket", "Vasant Kunj"]
+            },
+            "Tamil Nadu": {
+                "Mangaluru": ["Hebbal", "Gokulam"]
+            }
+        };
 
-        function toggleAuth() {
-            document.getElementById('authContainer').classList.toggle('hidden');
-        }
-
-        async function handleLogin() {
-            const userIn = document.getElementById('username').value;
-            const passIn = document.getElementById('password').value;
-            try {
-                const user = await api.loginUser(userIn, passIn);
-                showApp(user);
-            } catch (e) {
-                document.getElementById('authMsg').innerText = "Invalid credentials!";
+        function populateStates() {
+            const stateSelect = document.getElementById('state');
+            for (const state in locationData) {
+                stateSelect.add(new Option(state, state));
             }
         }
 
-        async function handleRegister() {
-            const userIn = document.getElementById('username').value;
-            const phoneIn = document.getElementById('phone').value;
-            const passIn = document.getElementById('password').value;
-            try {
-                // Pass basic payload
-                const user = await api.registerUser({ username: userIn, phone: phoneIn, passwordHash: passIn });
-                showApp(user);
-            } catch (e) {
-                document.getElementById('authMsg').innerText = "Registration failed!";
+        function updateCities() {
+            const stateSelect = document.getElementById('state');
+            const citySelect = document.getElementById('city');
+            const areaSelect = document.getElementById('area');
+            
+            citySelect.innerHTML = '<option value="">Select City</option>';
+            areaSelect.innerHTML = '<option value="">Select Area</option>';
+            
+            const selectedState = stateSelect.value;
+            if (selectedState && locationData[selectedState]) {
+                for (const city in locationData[selectedState]) {
+                    citySelect.add(new Option(city, city));
+                }
+            }
+        }
+
+        function updateAreas() {
+            const stateSelect = document.getElementById('state');
+            const citySelect = document.getElementById('city');
+            const areaSelect = document.getElementById('area');
+            
+            areaSelect.innerHTML = '<option value="">Select Area</option>';
+            
+            const selectedState = stateSelect.value;
+            const selectedCity = citySelect.value;
+            
+            if (selectedState && selectedCity && locationData[selectedState][selectedCity]) {
+                locationData[selectedState][selectedCity].forEach(area => {
+                    areaSelect.add(new Option(area, area));
+                });
+            }
+        }
+
+        // Initialize Dropdowns on Load
+        populateStates();
+
+        let currentMode = 'login';
+        
+        function toggleTheme() {
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                document.getElementById('themeIcon').innerText = '🌙 Dark Mode';
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.add('dark');
+                document.getElementById('themeIcon').innerText = '☀️ Light Mode';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        if (localStorage.getItem('theme') === 'light') {
+            toggleTheme(); // it defaults to dark structurally, so toggle switches to light
+        }
+
+        function switchTab(mode) {
+            currentMode = mode;
+            const regFields = document.getElementById('registerFields');
+            const btnLogin = document.getElementById('btnTabLogin');
+            const btnReg = document.getElementById('btnTabRegister');
+            const btnAdmin = document.getElementById('btnTabAdmin');
+            const submitBtn = document.getElementById('submitBtn');
+            const title = document.getElementById('formTitle');
+            const msg = document.getElementById('authMsg');
+            msg.innerText = "";
+            document.getElementById('password').value = "";
+
+            // Reset tabs
+            btnLogin.className = "flex-1 py-2 rounded-md font-bold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-all";
+            btnReg.className = "flex-1 py-2 rounded-md font-bold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-all";
+            btnAdmin.className = "flex-1 py-2 rounded-md font-bold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-all";
+
+            if (mode === 'login') {
+                regFields.classList.add('hidden');
+                btnLogin.className = "flex-1 py-2 rounded-md font-bold shadow bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 transition-all";
+                submitBtn.innerText = "Log In";
+                title.innerText = "Welcome Back";
+            } else if (mode === 'register') {
+                regFields.classList.remove('hidden');
+                btnReg.className = "flex-1 py-2 rounded-md font-bold shadow bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 transition-all";
+                submitBtn.innerText = "Create Account";
+                title.innerText = "Join BusBooking";
+            } else if (mode === 'admin') {
+                regFields.classList.add('hidden');
+                btnAdmin.className = "flex-1 py-2 rounded-md font-bold shadow bg-white dark:bg-gray-700 text-red-600 dark:text-red-400 transition-all";
+                submitBtn.innerText = "Admin Log In";
+                title.innerText = "Admin Portal";
+            }
+        }
+
+        async function submitAuth() {
+            const msg = document.getElementById('authMsg');
+            const username = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value;
+            const submitBtn = document.getElementById('submitBtn');
+
+            msg.innerText = "";
+
+            if (!username || !pass) {
+                msg.innerText = "Username and password are required.";
+                return;
+            }
+
+            if (currentMode === 'login' || currentMode === 'admin') {
+                try {
+                    const user = await api.loginUser(username, pass);
+                    if (currentMode === 'admin' && user.role !== 'ADMIN') {
+                        msg.innerText = "Access denied. Not an administrator.";
+                        return;
+                    }
+                    showApp(user);
+                } catch (e) {
+                    msg.innerText = "Invalid credentials!";
+                }
+            } else {
+                const phone = document.getElementById('phone').value.trim();
+                const state = document.getElementById('state').value.trim();
+                const city = document.getElementById('city').value.trim();
+                const area = document.getElementById('area').value.trim();
+
+                if (!phone || phone.length < 10) {
+                    msg.innerText = "Phone number must be at least 10 digits.";
+                    return;
+                }
+                if (pass.length < 6) {
+                    msg.innerText = "Password must be at least 6 characters.";
+                    return;
+                }
+
+                if (area && city) {
+                    submitBtn.innerText = "Locating Coordinates...";
+                    try {
+                        const query = encodeURIComponent(area + ', ' + city + ', ' + state);
+                        const geoRes = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + query);
+                        const geoData = await geoRes.json();
+                        if(geoData && geoData.length > 0) {
+                            localStorage.setItem('preferredLat', geoData[0].lat);
+                            localStorage.setItem('preferredLng', geoData[0].lon);
+                        }
+                    } catch(err) {
+                        console.warn("Geocoding failed.");
+                    }
+                }
+
+                try {
+                    submitBtn.innerText = "Joining...";
+                    const user = await api.registerUser({ username: username, phone: phone, passwordHash: pass });
+                    showApp(user);
+                } catch (e) {
+                    msg.innerText = "Registration failed. Username may exist.";
+                    submitBtn.innerText = "Create Account";
+                }
             }
         }
 
         function showApp(user) {
-            currentUser = user;
-            // Store locally so booking.html can use it
             localStorage.setItem('currentUser', JSON.stringify(user));
-            
-            // Redirect to booking.html automatically
-            window.location.href = 'booking.html';
-        }
-
-        async function checkFare() {
-            const routeId = document.getElementById('routeSelect').value;
-            try {
-                const fare = await api.calculateFare(routeId);
-                document.getElementById('fareDisplay').innerText = `Estimated Fare: ₹${fare.toFixed(2)}`;
-            } catch (e) {
-                document.getElementById('fareDisplay').innerText = `Error calculating fare`;
+            if (user.role === 'ADMIN') {
+                window.location.href = 'admin.html';
+            } else {
+                window.location.href = 'booking.html';
             }
         }
 
-        // Auto login check
         const savedUser = localStorage.getItem('currentUser');
         if (savedUser) {
             showApp(JSON.parse(savedUser));
