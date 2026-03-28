@@ -24,6 +24,13 @@
     </properties>
 
     <dependencies>
+        <!-- H2 Database (In-Memory) -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- Spring Boot Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
