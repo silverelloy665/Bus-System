@@ -22,12 +22,17 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<User> loginUser(@RequestParam String username, @RequestParam String passwordHash) {
-        Optional<User> user = userService.loginUser(username, passwordHash);
+    public ResponseEntity<User> loginUser(@RequestBody java.util.Map<String, String> payload) {
+        Optional<User> user = userService.loginUser(payload.get("username"), payload.get("passwordHash"));
         if (user.isPresent()) {
             return ResponseEntity.ok(user.get());
         }
         return ResponseEntity.status(401).build();
+    }
+
+    @GetMapping
+    public ResponseEntity<java.util.List<User>> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllUsers());
     }
 
     @PutMapping("/{id}/location")
