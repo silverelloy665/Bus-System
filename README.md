@@ -1,134 +1,62 @@
-# Bus Booking Web Application
+# Bus Booking System
 
-A full-stack real-time bus booking system with customer and admin portals.
+A full-stack web application designed for booking bus tickets, estimating fares, and tracking real-time bus locations. It features a responsive customer-facing frontend, an admin dashboard, and a Java Spring Boot backend built on top of an embedded H2 database.
 
-## Project Structure
+## Architecture & Tech Stack
+-   **Frontend:** HTML5, Tailwind CSS, Leaflet.js (for maps), Vanilla JavaScript (Fetch API).
+-   **Backend:** Java 25, Spring Boot 3.4.5, Spring Data JPA, Lombok.
+-   **Database:** H2 In-Memory Database (auto-initialized).
+-   **Build Tool:** Maven.
 
-```
-Bus System/
-├── backend/                 # Spring Boot REST API
-│   ├── src/main/java/com/busbooking/
-│   │   ├── BusBookingApplication.java
-│   │   ├── controller/      # REST API endpoints
-│   │   ├── service/         # Business logic
-│   │   ├── model/           # Entity classes
-│   │   ├── dao/             # Data access layer
-│   │   └── util/            # Utility classes
-│   ├── src/main/resources/
-│   │   └── application.properties
-│   └── pom.xml              # Maven configuration
-│
-├── frontend/
-│   ├── customer/            # Customer web interface
-│   │   ├── index.html
-│   │   ├── css/
-│   │   ├── js/
-│   │   └── assets/
-│   └── admin/               # Admin dashboard
-│       ├── index.html
-│       ├── css/
-│       ├── js/
-│       └── assets/
-│
-├── database/
-│   └── bus_booking_schema.sql
-│
-└── README.md
-```
+## Features Implemented
+1.  **User Authentication:** Complete Registration/Login flow (/api/users/register, /api/users/login).
+2.  **Interactive Maps:** Renders geographical tracking maps with custom markers utilizing Leaflet.js (map.js).
+3.  **Customer Dashboard:** Booking interface supporting active bus fetching and calculated fare check.
+4.  **Admin Dashboard:** Interfaces designed for updating route pricing (e.g., dynamically adjusting peak multipliers and enforcing limits).
+5.  **Data Seeding:** Backend seeds the internal database with Mumbai localities automatically upon startup so that route/bus data naturally loads on UI without tedious manual inputs.
+6.  **CORS Handling:** Robust internal CORS configuration permitting API access from frontend origin (\127.0.0.1:5500\).
 
-## Tech Stack
+## Setup and Running the Project
 
-- **Frontend**: HTML5, CSS3, JavaScript (Vanilla)
-- **Backend**: Java 17, Spring Boot 3.1.0, Maven
-- **Database**: MySQL 8.0
-- **Maps**: Leaflet.js
-- **API**: RESTful JSON APIs
-- **Real-time**: Polling mechanism (future: WebSockets)
+### Prerequisite Requirements
+-   Java JDK 25 installed
+-   Maven installed and tracked in PATH \(mvn)\
+-   VS Code 'Live Server' extension (for serving statically from \5500\)
 
-## Prerequisites
+### 1. Run the Backend API 
+1. Open a terminal and navigate to your ackend/ folder:
+    `ash
+    cd backend
+    `
+2. Execute the Spring Boot Server:
+    `ash
+    mvn spring-boot:run
+    `
+3. The server will start gracefully on \http://localhost:8080\, logging that H2 Dialect is injected and mock data (Stops, Buses, Routes, Fares) has populated.
 
-- Java 17+
-- Maven 3.8+
-- MySQL Server 8.0+
-- Modern Web Browser (Chrome, Firefox, Edge)
-
-## Setup Instructions
-
-### 1. Database Setup
-
-```bash
-# Start MySQL server
-mysql -u root -p
-
-# Run schema file
-SOURCE database/bus_booking_schema.sql;
-```
-
-### 2. Update Database Configuration
-
-Edit `backend/src/main/resources/application.properties`:
-```properties
-spring.datasource.username=<your-mysql-user>
-spring.datasource.password=<your-mysql-password>
-```
-
-### 3. Build and Run Backend
-
-```bash
-cd backend
-mvn clean install
-mvn spring-boot:run
-```
-
-API will be available at: `http://localhost:8080/api`
-
-### 4. Run Frontend
-
-For development, you can:
-- Option A: Open HTML files directly in browser
-- Option B: Use Live Server extension in VS Code
-- Option C: Deploy via Spring Boot static resources
-
-Frontend URLs:
-- Customer: `http://localhost:3000`
-- Admin: `http://localhost:3000/admin`
-
-## Features Roadmap
-
-### Phase 1: Customer Features
-- [ ] User Registration & Login
-- [ ] Real-time Location Update
-- [ ] Bus Tracking on Map
-- [ ] Bus Booking
-- [ ] Payment Processing
-
-### Phase 2: Admin Features
-- [ ] Admin Login
-- [ ] Stop Management
-- [ ] Route Management (Manual & AI-Assisted)
-- [ ] Fare Management & Warnings
-- [ ] Dashboard & Analytics
-
-## Git Commit Messages Template
-
-After each feature completion:
-```bash
-git add .
-git commit -m "MILESTONE: Feature Name - Brief Description"
-```
-
-## Default Credentials (Testing)
-
-- **Admin**: username: `admin`, password: `admin123`
-- Sample buses and routes are pre-populated in schema
-
-## API Port
-- Backend: `http://localhost:8080/api`
-
-## Database Port
-- MySQL: `localhost:3306`
+### 2. Run the Frontend App
+1. Right-click \rontend/index.html\ inside Visual Studio Code.
+2. Select **"Open with Live Server"**.
+3. It will host the frontend application over \http://127.0.0.1:5500/frontend/\.
 
 ---
 
-**Version**: 1.0.0  
-**Status**: In Development
+## API Endpoints Reference 
+
+### User Endpoints 
+-   **POST** \/api/users/register\ � Register a new user (Requires: username, phone, passwordHash)
+-   **POST** \/api/users/login\ � User authentication (Requires: username, passwordHash)
+-   **GET** \/api/users\ � Fetch all registered users
+-   **PUT** \/api/users/{id}/location?lat={X}&lng={Y}\ � Update logged-in user geographical coordinates
+
+### Booking Endpoints 
+-   **POST** \/api/bookings\ � Create a new ticket booking 
+-   **GET** \/api/bookings/user/{userId}\ � Get past/present bookings for specific user
+
+### Bus & Map Endpoints 
+-   **GET** \/api/buses\ � Retrieves a list of active buses internally stored alongside their lat/lng variables.
+-   **PUT** \/api/buses/{id}/location?lat={X}&lng={Y}\ � Post mock location pings to trace live-bus.
+
+### Admin Fare Overrides
+-   **GET** \/api/fares/route/{routeId}/calculate\ � Estimate real-time dynamic pricing per route
+-   **PUT** \/api/fares/{id}/peak\ � Update peak/pricing multiplier matrices (Requires: \multiplier\ arg)
