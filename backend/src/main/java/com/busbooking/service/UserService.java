@@ -3,6 +3,7 @@ package com.busbooking.service;
 import com.busbooking.dao.UserRepository;
 import com.busbooking.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import java.util.Optional;
 
@@ -22,9 +23,11 @@ public class UserService {
      * @return The registered user with userId
      */
     public User registerUser(User user) {
-        // Hash the password before saving (in production, use BCryptPasswordEncoder)
+        // Hash the password before saving
         user.setPasswordHash(hashPassword(user.getPasswordHash()));
         user.setBalance(0.0);
+        user.setCreatedAt(System.currentTimeMillis());
+        user.setUpdatedAt(System.currentTimeMillis());
         return userRepository.save(user);
     }
 
@@ -49,12 +52,13 @@ public class UserService {
      * @param lng The longitude
      * @return The updated user object
      */
-    public User updateLocation(Long userId, Double lat, Double lng) {
+    public User updateLocation(@NonNull Long userId, Double lat, Double lng) {
         Optional<User> user = userRepository.findById(userId);
         if (user.isPresent()) {
             User u = user.get();
             u.setCurrentLat(lat);
             u.setCurrentLng(lng);
+            u.setUpdatedAt(System.currentTimeMillis());
             return userRepository.save(u);
         }
         return null;
@@ -65,13 +69,13 @@ public class UserService {
      * @param id The user ID
      * @return The user object or null if not found
      */
-    public User getUserById(Long id) {
+    public User getUserById(@NonNull Long id) {
         Optional<User> user = userRepository.findById(id);
         return user.orElse(null);
     }
 
     /**
-     * Hash password (simple implementation - use BCryptPasswordEncoder in production)
+     * Hash password for storage
      */
     private String hashPassword(String password) {
         return Integer.toHexString(password.hashCode());

@@ -3,6 +3,7 @@ package com.busbooking.service;
 import com.busbooking.dao.BookingRepository;
 import com.busbooking.model.Booking;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
@@ -20,11 +21,14 @@ public class BookingService {
 
     /**
      * Create a new booking
-     * @param booking The booking object with userId, busId, fromStopId, toStopId
+     * @param booking The booking object with userId, busId, fromStopId, toStopId, fare
      * @return The created booking with bookingId
      */
     public Booking createBooking(Booking booking) {
         booking.setBookedAt(System.currentTimeMillis());
+        booking.setStatus("PENDING");
+        booking.setCreatedAt(System.currentTimeMillis());
+        booking.setUpdatedAt(System.currentTimeMillis());
         return bookingRepository.save(booking);
     }
 
@@ -33,10 +37,13 @@ public class BookingService {
      * @param bookingId The booking ID to cancel
      * @return true if cancellation was successful, false otherwise
      */
-    public boolean cancelBooking(Long bookingId) {
+    public boolean cancelBooking(@NonNull Long bookingId) {
         Optional<Booking> booking = bookingRepository.findById(bookingId);
         if (booking.isPresent()) {
-            bookingRepository.deleteById(bookingId);
+            Booking b = booking.get();
+            b.setStatus("CANCELLED");
+            b.setUpdatedAt(System.currentTimeMillis());
+            bookingRepository.save(b);
             return true;
         }
         return false;
@@ -47,7 +54,7 @@ public class BookingService {
      * @param userId The user ID
      * @return List of bookings for the user
      */
-    public List<Booking> getBookingsByUser(Long userId) {
+    public List<Booking> getBookingsByUser(@NonNull Long userId) {
         return bookingRepository.findAll().stream()
                 .filter(booking -> booking.getUserId() != null && booking.getUserId().equals(userId))
                 .collect(Collectors.toList());

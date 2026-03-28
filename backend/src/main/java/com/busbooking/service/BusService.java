@@ -3,6 +3,7 @@ package com.busbooking.service;
 import com.busbooking.dao.BusRepository;
 import com.busbooking.model.Bus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
@@ -31,7 +32,7 @@ public class BusService {
      * @param routeId The route ID
      * @return List of buses on the specified route
      */
-    public List<Bus> getBusesByRoute(Long routeId) {
+    public List<Bus> getBusesByRoute(@NonNull Long routeId) {
         return busRepository.findAll().stream()
                 .filter(bus -> bus.getRouteId() != null && bus.getRouteId().equals(routeId))
                 .collect(Collectors.toList());
@@ -44,12 +45,13 @@ public class BusService {
      * @param lng The longitude
      * @return The updated bus object
      */
-    public Bus updateBusLocation(Long busId, Double lat, Double lng) {
+    public Bus updateBusLocation(@NonNull Long busId, Double lat, Double lng) {
         Optional<Bus> bus = busRepository.findById(busId);
         if (bus.isPresent()) {
             Bus b = bus.get();
             b.setCurrentLat(lat);
             b.setCurrentLng(lng);
+            b.setUpdatedAt(System.currentTimeMillis());
             return busRepository.save(b);
         }
         return null;
@@ -75,7 +77,7 @@ public class BusService {
     }
 
     /**
-     * Calculate distance between two coordinates using Haversine formula approximate
+     * Calculate distance between two coordinates
      */
     private double calculateDistance(Double lat1, Double lng1, Double lat2, Double lng2) {
         return Math.sqrt(Math.pow(lat2 - lat1, 2) + Math.pow(lng2 - lng1, 2));
