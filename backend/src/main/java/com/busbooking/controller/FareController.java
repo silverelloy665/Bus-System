@@ -1,0 +1,30 @@
+package com.busbooking.controller;
+
+import com.busbooking.service.FareService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/fares")
+@CrossOrigin(origins = "*")
+public class FareController {
+
+    @Autowired
+    private FareService fareService;
+
+    @GetMapping("/route/{routeId}/calculate")
+    public ResponseEntity<Double> calculateFare(@PathVariable Long routeId) {
+        return ResponseEntity.ok(fareService.calculateFare(routeId));
+    }
+
+    @GetMapping("/route/{routeId}/suggest")
+    public ResponseEntity<Double> suggestFare(@PathVariable Long routeId) {
+        return ResponseEntity.ok(fareService.suggestFare(routeId));
+    }
+
+    @GetMapping("/validate")
+    public ResponseEntity<String> validateFareChange(@RequestParam Double oldFare, @RequestParam Double newFare) {
+        return ResponseEntity.ok(fareService.validateFareChange(oldFare, newFare));
+    }
+}
