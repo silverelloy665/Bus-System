@@ -32,7 +32,7 @@ public class User {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
-    @Column(name = "balance", precision = 10, scale = 2)
+    @Column(name = "balance")
     private Double balance;
 
     @Column(name = "current_lat")

@@ -35,7 +35,7 @@ public class Booking {
     @Column(name = "to_stop_id", nullable = false)
     private Long toStopId;
 
-    @Column(name = "fare", nullable = false, precision = 10, scale = 2)
+    @Column(name = "fare", nullable = false)
     private Double fare;
 
     @Column(name = "payment_method", length = 50)

@@ -26,19 +26,19 @@ public class Fare {
     @Column(name = "route_id", nullable = false)
     private Long routeId;
 
-    @Column(name = "base_fare", nullable = false, precision = 10, scale = 2)
+@Column(name = "base_fare", nullable = false)
     private Double baseFare;
 
-    @Column(name = "peak_multiplier", precision = 3, scale = 2)
-    private Double peakMultiplier; // 1.0 to 2.0 multiplier for peak hours
+    @Column(name = "peak_multiplier")
+    private Double peakMultiplier; // 1.0 to 2.0 multiplier for peak hours      
 
-    @Column(name = "off_peak_multiplier", precision = 3, scale = 2)
-    private Double offPeakMultiplier; // Discount multiplier for off-peak
+    @Column(name = "off_peak_multiplier")
+    private Double offPeakMultiplier; // Discount multiplier for off-peak       
 
-    @Column(name = "admin_override", precision = 10, scale = 2)
+    @Column(name = "admin_override")
     private Double adminOverride; // Admin set price override if any
 
-    @Column(name = "per_km_charge", precision = 10, scale = 2)
+    @Column(name = "per_km_charge")
     private Double perKmCharge; // Additional charge per km
 
     @Column(name = "is_active")
