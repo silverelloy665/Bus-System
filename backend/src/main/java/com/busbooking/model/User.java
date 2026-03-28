@@ -1,21 +1,21 @@
 package com.busbooking.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 
 /**
  * User Entity - Represents a bus booking system user/customer
  * Stores user profile information, location, and balance
  */
-@Entity
-@Table(name = "users")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Entity
+@Table(name = "users")
 public class User {
 
     @Id

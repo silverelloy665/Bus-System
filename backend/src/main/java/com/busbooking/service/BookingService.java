@@ -6,17 +6,21 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.springframework.lang.NonNull;
+
 @Service
+@SuppressWarnings("null")
 public class BookingService {
     @Autowired
     private BookingRepository bookingRepository;
-    public Booking createBooking(Booking booking) {
+    public Booking createBooking(@NonNull Booking booking) {
         return bookingRepository.save(booking);
     }
-    public Booking cancelBooking(Long bookingId) {
+    public Booking cancelBooking(@NonNull Long bookingId) {
         Optional<Booking> opt = bookingRepository.findById(bookingId);
         if (opt.isPresent()) {
-            return bookingRepository.save(opt.get());
+            Booking b = opt.get();
+            return bookingRepository.save(b);
         }
         throw new RuntimeException("Booking not found");
     }
