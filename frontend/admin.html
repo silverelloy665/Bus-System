@@ -231,7 +231,45 @@
                     </table>
                 </div>
             </div>
-            
+
+            <!-- Driver Management Panel -->
+            <div class="card" style="margin-top: 2rem;">
+                <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <h2>👨‍✈️ Driver Management</h2>
+                    <button class="btn btn-auto" onclick="document.getElementById('driverModal').style.display='flex'">+ Add Driver</button>
+                </div>
+                <div style="margin-top: 1rem; overflow-x:auto;">
+                    <table class="table" style="width:100%; border-collapse:collapse; text-align:left;">
+                        <thead>
+                            <tr style="border-bottom:2px solid var(--border);">
+                                <th style="padding:10px;">Name</th>
+                                <th>Phone</th>
+                                <th>License</th>
+                                <th>Assigned Bus</th>
+                                <th>Status</th>
+                                <th>Rating</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="driverTbody">
+                            <tr><td colspan="7">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Add Driver Modal -->
+    <div id="driverModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+        <div class="card" style="width:400px; position:relative; background:var(--bg-card); color:var(--text-main);">
+            <button onclick="document.getElementById('driverModal').style.display='none'" style="position:absolute; right:15px; top:15px; background:none; border:none; font-size:1.5rem; cursor:pointer;">✖</button>
+            <h3>Add New Driver</h3>
+            <input type="text" id="dName" placeholder="Full Name" style="margin-top:10px;">
+            <input type="text" id="dPhone" placeholder="Phone Number">
+            <input type="text" id="dLicense" placeholder="License Number">
+            <button class="btn btn-primary" onclick="addDriver()" style="margin-top:10px;">Save Driver</button>
         </div>
     </div>
 
@@ -488,7 +526,84 @@
             } catch (e) { console.error('Failed to load analytics', e); }
         }
 
-        setTimeout(() => { loadPredictions(); loadAnomalies(); loadAnalytics(); }, 1000);
+        async function loadDrivers() {
+            try {
+                const response = await fetch(`${api.baseUrl}/api/drivers`);
+                const drivers = await response.json();
+                const tbody = document.getElementById('driverTbody');
+                tbody.innerHTML = '';
+                if(drivers.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7">No drivers found.</td></tr>';
+                    return;
+                }
+                const buses = await api.getAllBuses();
+                let busOptions = `<option value="">None</option>` + buses.map(b => `<option value="${b.busId}">#${b.busId} (${b.registrationNumber})</option>`).join('');
+
+                drivers.forEach(d => {
+                    const tr = document.createElement('tr');
+                    tr.style.borderBottom = '1px solid var(--border)';
+                    tr.innerHTML = `
+                        <td style="padding:10px;">${d.name}</td>
+                        <td>${d.phone}</td>
+                        <td>${d.licenseNumber}</td>
+                        <td>
+                            <select onchange="assignBus(${d.driverId}, this.value)" style="padding:5px; border-radius:4px; max-width: 100px;">
+                                <option value="${d.busId || ''}" selected>${d.busId ? 'Bus #'+d.busId : 'Assign Bus'}</option>
+                                ${busOptions}
+                            </select>
+                        </td>
+                        <td>
+                            <select onchange="updateDriverStatus(${d.driverId}, this.value)" style="padding:5px; border-radius:4px;">
+                                <option value="ACTIVE" ${d.status==='ACTIVE'?'selected':''}>ACTIVE</option>
+                                <option value="OFF DUTY" ${d.status==='OFF DUTY'?'selected':''}>OFF DUTY</option>
+                                <option value="ON LEAVE" ${d.status==='ON LEAVE'?'selected':''}>ON LEAVE</option>
+                            </select>
+                        </td>
+                        <td>${'⭐'.repeat(Math.floor(d.rating || 5))}</td>
+                        <td><button class="btn btn-sec" style="padding:5px 10px; font-size:0.8rem;" onclick="alert('View stats for driver')">View Mode</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch(e) { console.error("Failed to load drivers", e); }
+        }
+
+        async function addDriver() {
+            const name = document.getElementById('dName').value;
+            const phone = document.getElementById('dPhone').value;
+            const license = document.getElementById('dLicense').value;
+            if(!name || !phone || !license) return alert("Required fields missing");
+            
+            try {
+                await fetch(`${api.baseUrl}/api/drivers`, {
+                    method: 'POST',
+                    headers: api.getHeaders(),
+                    body: JSON.stringify({ name, phone, licenseNumber: license, status: 'ACTIVE', rating: 5.0, totalTrips: 0 })
+                });
+                document.getElementById('driverModal').style.display='none';
+                loadDrivers();
+                alert("Driver added successfully!");
+            } catch(e) { alert("Failed to add driver"); }
+        }
+
+        async function assignBus(driverId, busId) {
+            if(!busId) return;
+            try {
+                await fetch(`${api.baseUrl}/api/drivers/${driverId}/assign-bus/${busId}`, { method: 'PUT', headers: api.getHeaders() });
+                loadDrivers();
+            } catch(e) { alert("Failed to assign bus"); }
+        }
+
+        async function updateDriverStatus(driverId, status) {
+            try {
+                await fetch(`${api.baseUrl}/api/drivers/${driverId}/status`, { 
+                    method: 'PUT', headers: Object.assign({}, api.getHeaders(), {'Content-Type': 'application/json'}),
+                    body: JSON.stringify({status})
+                });
+                loadDrivers();
+            } catch(e) { alert("Failed to update status"); }
+        }
+
+        setTimeout(() => { loadPredictions(); loadAnomalies(); loadAnalytics(); loadDrivers(); }, 1000);
     </script>
 </body>
 </html>
