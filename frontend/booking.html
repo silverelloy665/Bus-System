@@ -99,6 +99,19 @@
         .radio-group { display: flex; gap: 1.5rem; margin-bottom: 2rem; }
         .radio-label { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; cursor: pointer; }
 
+        .seat-class-group { display: flex; gap: 1rem; margin-bottom: 1.5rem; overflow-x: auto; padding-bottom: 0.5rem; width: 100%; }
+        .seat-card {
+            flex: 1; min-width: 120px; background: var(--bg-body); border: 2px solid var(--border);
+            border-radius: 12px; padding: 1rem; text-align: center; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .seat-card:hover { border-color: var(--primary); }
+        .seat-card.selected { border-color: var(--primary); background: var(--highlight); box-shadow: 0 0 0 2px var(--primary); }
+        .seat-card .icon { font-size: 2rem; margin-bottom: 0.5rem; }
+        .seat-card .title { font-weight: 600; margin-bottom: 0.25rem; }
+        .seat-card .price { color: var(--success); font-weight: bold; margin-bottom: 0.5rem; }
+        .seat-card .desc { font-size: 0.75rem; color: var(--text-main); opacity: 0.7; }
+
         .btn-success {
             background-color: var(--success); width: 100%; padding: 1.2rem;
             font-size: 1.25rem; border-radius: 12px;
@@ -136,18 +149,40 @@
 
             <div class="grid-2">
                 <div>
-                    <label>From Stop ID:</label>
-                    <input type="number" id="fromStop" value="1">
+                    <label>From Stop:</label>
+                    <select id="fromStop" onchange="updateFare()"><option value="">-- Loading Stops --</option></select>
                 </div>
                 <div>
-                    <label>To Stop ID:</label>
-                    <input type="number" id="toStop" value="5" onchange="updateFare()">
+                    <label>To Stop:</label>
+                    <select id="toStop" onchange="updateFare()"><option value="">-- Loading Stops --</option></select>
                 </div>
             </div>
 
             <div class="fare-box">
                 <span>Total Fare:</span>
                 <div class="fare-amount" id="fareDisplay">₹0.00</div>
+            </div>
+
+            <label style="margin-bottom: 1rem; display: block;">Select Seat Class</label>
+            <div class="seat-class-group">
+                <div class="seat-card selected" onclick="selectSeatClass(this, 0, 'Economy')">
+                    <div class="icon">🪑</div>
+                    <div class="title">Economy</div>
+                    <div class="price">+₹0</div>
+                    <div class="desc">Basic seating, fan</div>
+                </div>
+                <div class="seat-card" onclick="selectSeatClass(this, 20, 'Business')">
+                    <div class="icon">💺</div>
+                    <div class="title">Business</div>
+                    <div class="price">+₹20</div>
+                    <div class="desc">Cushioned seat, AC</div>
+                </div>
+                <div class="seat-card" onclick="selectSeatClass(this, 50, 'Deluxe')">
+                    <div class="icon">👑</div>
+                    <div class="title">Deluxe</div>
+                    <div class="price">+₹50</div>
+                    <div class="desc">Premium seat, AC, charging</div>
+                </div>
             </div>
 
             <label style="margin-bottom: 1rem;">Payment Method</label>
@@ -182,6 +217,27 @@
         let currentUser = JSON.parse(localStorage.getItem('currentUser'));
         if (!currentUser) window.location.href = 'index.html';
 
+        let stopsCache = [];
+        let baseFare = 0;
+        let selectedSeatClassBonus = 0;
+
+        async function loadStops() {
+            try {
+                stopsCache = await api.getAllStops();
+                const fromSelect = document.getElementById('fromStop');
+                const toSelect = document.getElementById('toStop');
+                
+                fromSelect.innerHTML = '<option value="">-- Select Boarding Stop --</option>';
+                toSelect.innerHTML = '<option value="">-- Select Destination Stop --</option>';
+                
+                stopsCache.forEach(stop => {
+                    const text = `${stop.name} (${stop.city || 'Unknown'}, ${stop.area || 'Unknown'})`;
+                    fromSelect.add(new Option(text, stop.stopId));
+                    toSelect.add(new Option(text, stop.stopId));
+                });
+            } catch(e) { console.error("Could not load stops"); }
+        }
+
         async function loadBuses() {
             try {
                 const lat = currentUser.currentLat || 19.0760;
@@ -193,28 +249,78 @@
                 document.getElementById('busList').innerText = `Found ${buses.length} buses nearby!`;
                 
                 buses.forEach(b => {
-                    busSelect.add(new Option(`Bus #${b.id} (Route ${b.routeId})`, b.id));
+                    busSelect.add(new Option(`Bus #${b.id || b.busId || b.registrationNumber} (Route ${b.routeId})`, b.id || b.busId));
                 });
-                updateFare();
             } catch(e) { document.getElementById('busList').innerText = 'Failed to load buses.'; }
         }
 
         async function updateFare() {
+            const fromId = document.getElementById('fromStop').value;
+            const toId = document.getElementById('toStop').value;
+            const busSelect = document.getElementById('busSelect');
+            
+            if (!fromId || !toId) return;
+
+            document.getElementById('fareDisplay').innerText = `Calculating...`;
             try {
-                const fare = await api.calculateFare(1);
-                document.getElementById('fareDisplay').innerText = `₹${fare.toFixed(2)}`;
-            } catch(e) { console.warn("Could not calculate fare dynamically"); }
+                // If a bus is selected, get its routeId, else fallback to 1 for demo
+                let routeId = 1;
+                if (busSelect.value && busSelect.selectedIndex > 0) {
+                    const text = busSelect.options[busSelect.selectedIndex].text;
+                    const match = text.match(/Route (\d+)/);
+                    if (match) routeId = parseInt(match[1]);
+                }
+                
+                baseFare = await api.calculateFare(routeId);
+                renderTotalFare();
+            } catch(e) { 
+                console.warn("Could not calculate fare dynamically"); 
+                document.getElementById('fareDisplay').innerText = `₹--`;
+            }
+        }
+
+        function selectSeatClass(element, bonus, className) {
+            document.querySelectorAll('.seat-card').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            element.dataset.className = className;
+            selectedSeatClassBonus = bonus;
+            renderTotalFare();
+        }
+
+        function renderTotalFare() {
+            if (baseFare > 0) {
+                const total = baseFare + selectedSeatClassBonus;
+                document.getElementById('fareDisplay').innerText = `₹${total.toFixed(2)}`;
+            }
         }
 
         async function submitBooking() {
             const busId = document.getElementById('busSelect').value;
+            const fromId = document.getElementById('fromStop').value;
+            const toId = document.getElementById('toStop').value;
+            const selectedClassCard = document.querySelector('.seat-card.selected');
+            const seatClass = selectedClassCard ? selectedClassCard.dataset.className : 'Economy';
+            const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
+            
             if(!busId) { alert("Please select a bus!"); return; }
+            if(!fromId || !toId) { alert("Please select boarding and destination stops!"); return; }
             
             const msg = document.getElementById('statusMsg');
             try {
-                const res = await api.createBooking({ userId: currentUser.id, busId: parseInt(busId), status: "CONFIRMED" });
+                // Add seatClass, fromStopId, toStopId, paymentMethod to payload
+                const payload = { 
+                    userId: currentUser.id || currentUser.userId, 
+                    busId: parseInt(busId), 
+                    fromStopId: parseInt(fromId),
+                    toStopId: parseInt(toId),
+                    seatClass: seatClass,
+                    paymentMethod: paymentMethod,
+                    status: "CONFIRMED" 
+                };
+                
+                const res = await api.createBooking(payload);
                 msg.style.color = "var(--success)";
-                msg.innerText = `Success! Booking ID: #${res.id}`;
+                msg.innerHTML = `Success! Booking ID: #${res.id || res.bookingId}  <div style="font-size: 0.9em; margin-top: 5px;">Class: <b>${seatClass}</b></div>`;
             } catch(e) {
                 msg.style.color = "var(--danger)";
                 msg.innerText = `Failed to create booking.`;
@@ -227,6 +333,39 @@
         const lng = prefLng ? parseFloat(prefLng) : (currentUser?.currentLng || 72.8777);
         initMap(lat, lng);
         loadBuses();
+        loadStops();
+
+        // When a bus is selected, update the map route
+        document.getElementById('busSelect').addEventListener('change', async function() {
+            updateFare(); // recalculate based on route
+            
+            const fromId = document.getElementById('fromStop').value;
+            const toId = document.getElementById('toStop').value;
+            
+            if (this.value && this.selectedIndex > 0) {
+                const text = this.options[this.selectedIndex].text;
+                const match = text.match(/Route (\d+)/);
+                if (match) {
+                    const routeId = parseInt(match[1]);
+                    // Assuming map.js handles this, else we provide a global function
+                    if (typeof drawBusRoute === 'function') {
+                        drawBusRoute(routeId, fromId, toId);
+                    }
+                }
+            }
+        });
+
+        // Trigger route update when stops change as well
+        document.getElementById('fromStop').addEventListener('change', function() {
+            if (document.getElementById('busSelect').value) {
+                document.getElementById('busSelect').dispatchEvent(new Event('change'));
+            }
+        });
+        document.getElementById('toStop').addEventListener('change', function() {
+            if (document.getElementById('busSelect').value) {
+                document.getElementById('busSelect').dispatchEvent(new Event('change'));
+            }
+        });
 
         async function searchArea() {
             const query = document.getElementById('areaSearch').value;

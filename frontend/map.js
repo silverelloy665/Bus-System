@@ -41,3 +41,61 @@ async function fetchAndPlotBuses() {
         console.error('Failed to update buses on map:', e);
     }
 }
+
+let currentPolylines = [];
+let routeMarkers = [];
+
+async function drawBusRoute(routeId, fromStopId, toStopId) {
+    // Clear old route
+    currentPolylines.forEach(p => map.removeLayer(p));
+    routeMarkers.forEach(m => map.removeLayer(m));
+    currentPolylines = [];
+    routeMarkers = [];
+
+    try {
+        const stops = await api.getAllStops();
+        // In a real app we'd get only stops for this route and sort them
+        // For here we just draw all stops for visual effect since backend route-stops may not be fully implemented
+        
+        let pathCoords = [];
+        stops.forEach((stop, index) => {
+            if (stop.lat && stop.lng) {
+                pathCoords.push([stop.lat, stop.lng]);
+                
+                let iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png';
+                let label = stop.name;
+                
+                if (stop.stopId == fromStopId) {
+                    iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png';
+                    label = "⭐ Boarding: " + stop.name;
+                } else if (stop.stopId == toStopId) {
+                    iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png';
+                    label = "🏁 Destination: " + stop.name;
+                }
+
+                const customIcon = L.icon({
+                    iconUrl: iconUrl,
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                    shadowSize: [41, 41]
+                });
+
+                const marker = L.marker([stop.lat, stop.lng], {icon: customIcon})
+                    .addTo(map)
+                    .bindPopup(label);
+                
+                routeMarkers.push(marker);
+            }
+        });
+
+        if (pathCoords.length > 0) {
+            const polyline = L.polyline(pathCoords, {color: '#2563eb', weight: 4, opacity: 0.7}).addTo(map);
+            currentPolylines.push(polyline);
+            map.fitBounds(polyline.getBounds(), {padding: [50, 50]});
+        }
+    } catch(e) {
+        console.error("Error drawing route on map", e);
+    }
+}

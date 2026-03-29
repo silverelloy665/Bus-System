@@ -44,6 +44,9 @@ public class Stop {
     @Column(name = "state", length = 50)
     private String state;
 
+    @Column(name = "area", length = 100)
+    private String area;
+
     @Column(name = "contact_number", length = 15)
     private String contactNumber;
 

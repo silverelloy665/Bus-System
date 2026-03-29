@@ -66,5 +66,12 @@ const api = {
         const res = await fetch(`${BASE_URL}/fares/validate?${params}`);
         if (!res.ok) throw new Error('Failed to validate fare');
         return res.text();
+    },
+
+    // Stops
+    async getAllStops() {
+        const res = await fetch(`${BASE_URL}/stops`);
+        if (!res.ok) throw new Error('Failed to fetch stops');
+        return res.json();
     }
 };

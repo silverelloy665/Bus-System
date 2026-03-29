@@ -56,6 +56,9 @@ public class Booking {
     @Column(name = "seat_number", length = 50)
     private String seatNumber;
 
+    @Column(name = "seat_class", length = 50)
+    private String seatClass;
+
     @Column(name = "passenger_count")
     private Integer passengerCount;
 
