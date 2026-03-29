@@ -12,8 +12,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.List;
-
 @Configuration
 public class DataSeeder {
 
@@ -31,6 +29,15 @@ public class DataSeeder {
                 admin.setPasswordHash("admin123");
                 admin.setRole("ADMIN");
                 userRepository.save(admin);
+            }
+
+            // Seed sample customer
+            if (userRepository.findAll().stream().noneMatch(u -> "Aarushm".equals(u.getUsername()))) {
+                User customer = new User();
+                customer.setUsername("Aarushm");
+                customer.setPasswordHash("123456"); // You can use whichever password you were trying to use
+                customer.setRole("CUSTOMER");
+                userRepository.save(customer);
             }
 
             // Seed sample stops if empty
@@ -52,7 +59,9 @@ public class DataSeeder {
                 Bus b1 = Bus.builder().driverName("Ramesh").registrationNumber("MH-01-AB-1234").capacity(40).status("ACTIVE").currentLat(18.9690).currentLng(72.8205).routeId(r1.getRouteId()).build();
                 Bus b2 = Bus.builder().driverName("Suresh").registrationNumber("MH-12-CD-5678").capacity(45).status("ACTIVE").currentLat(18.5018).currentLng(73.8636).routeId(r2.getRouteId()).build();
                 Bus b3 = Bus.builder().driverName("Mahesh").registrationNumber("KA-01-EF-9012").capacity(30).status("ACTIVE").currentLat(12.9569).currentLng(77.5703).routeId(r1.getRouteId()).build();
-                busRepository.saveAll(List.of(b1, b2, b3));
+                busRepository.save(b1);
+                busRepository.save(b2);
+                busRepository.save(b3);
             }
         };
     }
