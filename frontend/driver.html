@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Panel - Live Bus System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    <style>
+        :root {
+            --bg: #f9fafb; --surface: #ffffff; --text: #111827;
+            --primary: #3b82f6; --secondary: #10b981; --border: #e5e7eb;
+            --danger: #ef4444; --warning: #f59e0b;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
+        .card { background: var(--surface); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; max-width: 600px; margin-left: auto; margin-right: auto;}
+        h2 { margin-top: 0; }
+        input, select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; background: var(--primary); color: white; margin-bottom: 10px; }
+        .btn-update { background: var(--secondary); font-size: 1.1rem; padding: 16px; }
+        .btn-danger { background: var(--danger); }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        #map { height: 300px; width: 100%; border-radius: 12px; z-index: 1; margin-bottom: 15px;}
+        .stat-box { background: var(--bg); padding: 15px; border-radius: 8px; text-align: center; border: 1px solid var(--border); }
+        .stat-box h4 { margin: 0; font-size: 0.9rem; color: #6b7280; }
+        .stat-box p { margin: 5px 0 0 0; font-size: 1.5rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <!-- Login Section -->
+    <div id="loginSection" class="card">
+        <h2>Driver Login</h2>
+        <input type="number" id="loginBusId" placeholder="Bus ID (e.g. 1)">
+        <input type="password" id="loginDriverCode" placeholder="Driver Secret Code">
+        <button class="btn" onclick="loginDriver()">START SHIFT</button>
+    </div>
+
+    <!-- Dashboard Section -->
+    <div id="dashboardSection" class="card" style="display: none;">
+        <h2>🚌 Bus Dashboard - ID: <span id="displayBusId"></span></h2>
+        
+        <div class="grid-2" style="margin-bottom: 15px;">
+            <div class="stat-box">
+                <h4>Passengers</h4>
+                <p id="displayPassengers">0</p>
+                <div style="margin-top: 5px;">
+                    <button onclick="updatePassengers(-1)" style="padding: 5px 10px;">-</button>
+                    <button onclick="updatePassengers(1)" style="padding: 5px 10px;">+</button>
+                </div>
+            </div>
+            <div class="stat-box">
+                <h4>Next Stop / ETA</h4>
+                <p style="font-size: 1.1rem;" id="displayNextStop">Computing...</p>
+            </div>
+        </div>
+
+        <select id="driverStatus" onchange="sendStatusUpdate()">
+            <option value="ACTIVE">Status: ACTIVE</option>
+            <option value="ON BREAK">Status: ON BREAK</option>
+            <option value="END SHIFT">Status: END SHIFT</option>
+        </select>
+
+        <div id="map"></div>
+
+        <button class="btn btn-update" id="btnUpdateLocation" onclick="forceLocationUpdate()">📍 PUSH MY LOCATION</button>
+        <button class="btn btn-danger" onclick="reportEmergency()">🚨 EMERGENCY / BREAKDOWN</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script>
+        const BASE_URL = 'http://localhost:8080/api';
+        let currentBusId = null;
+        let driverCode = null;
+        let currentLat = null;
+        let currentLng = null;
+        let passengerCount = 0;
+        let map;
+        let busMarker;
+
+        async function loginDriver() {
+            const bId = document.getElementById('loginBusId').value;
+            const code = document.getElementById('loginDriverCode').value;
+            if(!bId || !code) return alert("Enter Bus ID and Code");
+
+            // Normally we'd verify via backend, but let's assume valid locally and send first update
+            currentBusId = parseInt(bId);
+            driverCode = code;
+
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('dashboardSection').style.display = 'block';
+            document.getElementById('displayBusId').innerText = currentBusId;
+
+            initMap();
+            startAutoUpdate();
+        }
+
+        function initMap() {
+            if (!map) {
+                map = L.map('map').setView([18.9690, 72.8205], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                busMarker = L.marker([18.9690, 72.8205]).addTo(map).bindPopup("Your Bus");
+            }
+        }
+
+        function reportEmergency() {
+            if(confirm("Report breakdown/emergency to admin?")) {
+                sendDriverUpdate({ status: 'MAINTENANCE' });
+                document.getElementById('driverStatus').value = 'END SHIFT';
+                alert("Alert sent to admin panel.");
+            }
+        }
+
+        function updatePassengers(change) {
+            passengerCount += change;
+            if(passengerCount < 0) passengerCount = 0;
+            document.getElementById('displayPassengers').innerText = passengerCount;
+            sendDriverUpdate({ passengerCount });
+        }
+
+        function sendStatusUpdate() {
+            const st = document.getElementById('driverStatus').value;
+            sendDriverUpdate({ status: st });
+        }
+
+        async function forceLocationUpdate() {
+            if (navigator.geolocation) {
+                document.getElementById('btnUpdateLocation').innerText = "Updating...";
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        currentLat = position.coords.latitude;
+                        currentLng = position.coords.longitude;
+                        
+                        map.setView([currentLat, currentLng], 14);
+                        busMarker.setLatLng([currentLat, currentLng]);
+
+                        await sendDriverUpdate({ lat: currentLat, lng: currentLng });
+                        document.getElementById('btnUpdateLocation').innerText = "📍 PUSH MY LOCATION";
+                    },
+                    (err) => { alert("GPS Error"); document.getElementById('btnUpdateLocation').innerText = "📍 PUSH MY LOCATION"; },
+                    { enableHighAccuracy: true }
+                );
+            } else {
+                alert("Geolocation not supported");
+            }
+        }
+
+        function startAutoUpdate() {
+            // Auto update every 30s using standard REST (WebSocket handles the broadcast)
+            setInterval(() => {
+                if(document.getElementById('driverStatus').value === 'ACTIVE') {
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(position => {
+                            currentLat = position.coords.latitude;
+                            currentLng = position.coords.longitude;
+                            sendDriverUpdate({ lat: currentLat, lng: currentLng });
+                            busMarker.setLatLng([currentLat, currentLng]);
+                            map.setView([currentLat, currentLng]);
+                        });
+                    }
+                }
+            }, 30000);
+        }
+
+        async function sendDriverUpdate(payload = {}) {
+            payload.driverCode = driverCode;
+            try {
+                const res = await fetch(`${BASE_URL}/buses/${currentBusId}/driver-update`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if(!res.ok) throw new Error("Update failed");
+            } catch(e) {
+                console.error(e);
+            }
+        }
+    </script>
+</body>
+</html>

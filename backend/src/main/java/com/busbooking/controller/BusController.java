@@ -44,4 +44,15 @@ public class BusController {
     public ResponseEntity<List<Bus>> getNearbyBuses(@RequestParam Double lat, @RequestParam Double lng) {
         return ResponseEntity.ok(busService.getNearbyBuses(lat, lng));
     }
+
+    @PostMapping("/{id}/driver-update")
+    public ResponseEntity<Bus> driverUpdate(@PathVariable Long id, @RequestBody DriverUpdateRequest request) {
+        try {
+            Bus updatedBus = busService.driverUpdate(id, request.getDriverCode(), request.getLat(), request.getLng(), request.getPassengerCount(), request.getStatus());
+            busLocationWebSocket.broadcastBusLocation(updatedBus);
+            return ResponseEntity.ok(updatedBus);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(401).build();
+        }
+    }
 }

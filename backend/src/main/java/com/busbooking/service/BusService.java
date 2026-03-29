@@ -29,6 +29,22 @@ public class BusService {
         }
         throw new RuntimeException("Bus not found");
     }
+
+    public Bus driverUpdate(Long busId, String driverCode, Double lat, Double lng, Integer passengerCount, String status) {
+        Optional<Bus> opt = busRepository.findById(busId);
+        if (opt.isPresent()) {
+            Bus b = opt.get();
+            if (driverCode != null && b.getDriverCode() != null && !b.getDriverCode().equals(driverCode)) {
+                throw new RuntimeException("Invalid driver code");
+            }
+            if (lat != null) b.setCurrentLat(lat);
+            if (lng != null) b.setCurrentLng(lng);
+            if (passengerCount != null) b.setPassengerCount(passengerCount);
+            if (status != null && !status.isEmpty()) b.setStatus(status);
+            return busRepository.save(b);
+        }
+        throw new RuntimeException("Bus not found");
+    }
     public List<Bus> getNearbyBuses(Double lat, Double lng) {
         return busRepository.findAll().stream()
             .filter(bus -> bus.getCurrentLat() != null && bus.getCurrentLng() != null)

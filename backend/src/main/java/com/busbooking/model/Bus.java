@@ -26,6 +26,9 @@ public class Bus {
     @Column(name = "driver_name", nullable = false, length = 100)
     private String driverName;
 
+    @Column(name = "driver_code", length = 50)
+    private String driverCode;
+
     @Column(name = "current_lat")
     private Double currentLat;
 
@@ -40,6 +43,9 @@ public class Bus {
 
     @Column(name = "capacity")
     private Integer capacity;
+
+    @Column(name = "passenger_count")
+    private Integer passengerCount = 0;
 
     @Column(name = "registration_number", unique = true, length = 20)
     private String registrationNumber;
