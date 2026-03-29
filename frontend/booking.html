@@ -736,6 +736,13 @@
                 msg.style.color = "var(--success)";
                 msg.innerHTML = `Success! Booking ID: #${res.id || res.bookingId}  <div style="font-size: 0.9em; margin-top: 5px;">Class: <b>${seatClass}</b> | Paid: ₹${totalFare.toFixed(2)}</div>`;
                 
+                // Feature 21: Notification
+                if(window.api && api.notify) {
+                    api.notify("✅ Booking Confirmed", `₹${totalFare.toFixed(2)} charged. Seat Class: ${seatClass}`);
+                    setTimeout(() => api.notify("⭐ Loyalty Update", "You earned 3 loyalty points!"), 3000);
+                    setTimeout(() => api.notify("🚌 Bus Update", `Bus is 2 stops away!`), 8000);
+                }
+
                 // Refresh points
                 setTimeout(fetchLoyaltyBalance, 1000);
                 

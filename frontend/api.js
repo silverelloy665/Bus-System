@@ -1,6 +1,21 @@
 const BASE_URL = 'http://localhost:8080/api';
 
 const api = {
+    // Utilities
+    notify(title, body) {
+        if ('Notification' in window && navigator.serviceWorker) {
+            if (Notification.permission === 'granted') {
+                navigator.serviceWorker.ready.then(registration => {
+                    registration.showNotification(title, {
+                        body: body,
+                        icon: '/bus-icon.png',
+                        vibrate: [200, 100, 200]
+                    });
+                });
+            }
+        }
+    },
+
     // Users
     async registerUser(user) {
         const res = await fetch(`${BASE_URL}/users/register`, {
