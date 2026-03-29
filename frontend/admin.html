@@ -155,10 +155,22 @@
                 </div>
                 <button class="btn btn-sec" onclick="applyFare()">Save Fare Profile</button>
             </div>
+            
+            <div class="card" style="margin-top: 2rem;">
+                <div class="card-header">
+                    <h2>📈 Demand Forecast (Next 3 Hours)</h2>
+                    <button class="btn btn-primary" onclick="loadPredictions()">Refresh Prediction</button>
+                </div>
+                <div style="height: 300px; width: 100%; margin-top: 1rem;">
+                    <canvas id="demandChart"></canvas>
+                </div>
+            </div>
+            
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="api.js"></script>
     <script src="map.js"></script>
     <script>
@@ -279,6 +291,52 @@
                 alert("Fare saved successfully!");
             } catch(e) { alert("Failed to apply fare"); }
         }
+
+        let demandChartInstance = null;
+        async function loadPredictions() {
+            try {
+                const response = await fetch(`${api.baseUrl}/api/predictions/busy-routes`, {
+                    headers: api.getHeaders()
+                });
+                const predictions = await response.json();
+                
+                if (demandChartInstance) {
+                    demandChartInstance.destroy();
+                }
+
+                const ctx = document.getElementById('demandChart').getContext('2d');
+                const labels = predictions.map(p => `Route ${p.routeId}`);
+                const data = predictions.map(p => p.predictedBookings);
+
+                demandChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Predicted Bookings (Next 3 Hours)',
+                            data: data,
+                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            } catch(e) {
+                console.error("Failed to load predictions", e);
+            }
+        }
+        
+        // Auto-load on init
+        setTimeout(loadPredictions, 1000);
     </script>
 </body>
 </html>

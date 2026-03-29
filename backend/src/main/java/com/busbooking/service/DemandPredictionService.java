@@ -1,7 +1,6 @@
 package com.busbooking.service;
 
 import com.busbooking.dao.RouteDemandRepository;
-import com.busbooking.dao.BookingRepository;
 import com.busbooking.dao.RouteRepository;
 import com.busbooking.model.RouteDemand;
 import com.busbooking.model.Route;
@@ -12,13 +11,13 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.DayOfWeek;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@SuppressWarnings("null")
 public class DemandPredictionService {
 
     @Autowired
