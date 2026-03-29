@@ -16,6 +16,9 @@ public class BusController {
     @Autowired
     private BusService busService;
 
+    @Autowired
+    private BusLocationWebSocket busLocationWebSocket;
+
     @GetMapping
     public ResponseEntity<List<Bus>> getAllBuses() {
         return ResponseEntity.ok(busService.getAllBuses());
@@ -29,7 +32,9 @@ public class BusController {
     @PutMapping("/{id}/location")
     public ResponseEntity<Bus> updateBusLocation(@PathVariable Long id, @RequestParam Double lat, @RequestParam Double lng) {
         try {
-            return ResponseEntity.ok(busService.updateBusLocation(id, lat, lng));
+            Bus updatedBus = busService.updateBusLocation(id, lat, lng);
+            busLocationWebSocket.broadcastBusLocation(updatedBus);
+            return ResponseEntity.ok(updatedBus);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }

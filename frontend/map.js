@@ -19,22 +19,45 @@ function initMap(lat = 12.9716, lng = 77.5946) {
         userMarker = L.marker([lat, lng]).addTo(map).bindPopup("You are here");
     }
 
-    // Auto-refresh bus locations every 10 seconds
-    setInterval(fetchAndPlotBuses, 10000);
+    // Initial load
     fetchAndPlotBuses();
+
+    // Connect to WebSocket for real-time updates
+    setupBusWebSocket();
+}
+
+function setupBusWebSocket() {
+    const ws = new WebSocket('ws://localhost:8080/ws/bus-location');
+    ws.onmessage = (event) => {
+        const bus = JSON.parse(event.data);
+        const busId = bus.id || bus.busId;
+        if (busMarkers[busId]) {
+            busMarkers[busId].setLatLng([bus.currentLat, bus.currentLng]);
+            busMarkers[busId].bindPopup(`Bus #${busId} (Route: ${bus.routeId})`).update();
+        } else {
+            busMarkers[busId] = L.marker([bus.currentLat, bus.currentLng])
+                .addTo(map)
+                .bindPopup(`Bus #${busId} (Route: ${bus.routeId})`);
+        }
+    };
+    ws.onclose = () => {
+        console.log("WebSocket connection closed. Retrying in 5s...");
+        setTimeout(setupBusWebSocket, 5000);
+    };
 }
 
 async function fetchAndPlotBuses() {
     try {
         const buses = await api.getAllBuses();
         buses.forEach(bus => {
-            if (busMarkers[bus.id]) {
-                busMarkers[bus.id].setLatLng([bus.currentLat, bus.currentLng]);
+            const busId = bus.id || bus.busId;
+            if (busMarkers[busId]) {
+                busMarkers[busId].setLatLng([bus.currentLat, bus.currentLng]);
             } else {
                 // Determine a simple custom icon or use Leaflet default
-                busMarkers[bus.id] = L.marker([bus.currentLat, bus.currentLng])
+                busMarkers[busId] = L.marker([bus.currentLat, bus.currentLng])
                     .addTo(map)
-                    .bindPopup(`Bus #${bus.id} (Route: ${bus.routeId})`);
+                    .bindPopup(`Bus #${busId} (Route: ${bus.routeId})`);
             }
         });
     } catch (e) {
