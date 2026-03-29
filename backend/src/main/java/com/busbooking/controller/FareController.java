@@ -27,4 +27,9 @@ public class FareController {
     public ResponseEntity<String> validateFareChange(@RequestParam Double oldFare, @RequestParam Double newFare) {
         return ResponseEntity.ok(fareService.validateFareChange(oldFare, newFare));
     }
+
+    @PostMapping
+    public ResponseEntity<com.busbooking.model.Fare> saveFare(@RequestBody com.busbooking.model.Fare fare) {
+        return ResponseEntity.ok(fareService.saveFare(fare));
+    }
 }

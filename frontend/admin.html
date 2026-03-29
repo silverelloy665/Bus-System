@@ -109,7 +109,14 @@
     <div class="container">
         <!-- Map Panel -->
         <div class="card">
-            <h2>📍 Geo Live Tracking</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>📍 Geo Live Tracking</h2>
+                <button class="btn btn-auto" onclick="visualizeAllRoutes()" style="margin-bottom: 10px; background: var(--secondary);">Show All Routes</button>
+            </div>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <input type="text" id="adminAreaSearch" placeholder="Search Area/City (e.g. Pune, Bangalore)" style="flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+                <button class="btn" style="width: auto; padding: 0 20px;" onclick="adminSearchArea()">Search Map</button>
+            </div>
             <div id="map"></div>
             <p class="map-help">* Click on the map to automatically fill latitude & longitude for new stops.</p>
         </div>
@@ -119,6 +126,11 @@
             <div class="section">
                 <h3>1. Create Stop</h3>
                 <input type="text" id="stopName" placeholder="Stop Name (e.g. Pune Central)">
+                <div class="grid-3" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <input type="text" id="stopArea" placeholder="Area">
+                    <input type="text" id="stopCity" placeholder="City">
+                    <input type="text" id="stopState" placeholder="State">
+                </div>
                 <div class="grid-2">
                     <input type="text" id="stopLat" placeholder="Lat (Click Map)" readonly style="background: rgba(0,0,0,0.05); cursor: not-allowed;">
                     <input type="text" id="stopLng" placeholder="Lng (Click Map)" readonly style="background: rgba(0,0,0,0.05); cursor: not-allowed;">
@@ -175,14 +187,73 @@
             L.marker([e.latlng.lat, e.latlng.lng]).addTo(map).bindPopup("New Stop").openPopup();
         });
 
+        async function adminSearchArea() {
+            const query = document.getElementById('adminAreaSearch').value;
+            if (!query) return;
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+                const data = await res.json();
+                if (data && data.length > 0) {
+                    const newLat = parseFloat(data[0].lat); const newLng = parseFloat(data[0].lon);
+                    map.setView([newLat, newLng], 13);
+                } else { alert("Location not found."); }
+            } catch(e) { alert("Search failed."); }
+        }
+
+        let adminPolylines = [];
+        async function visualizeAllRoutes() {
+            try {
+                adminPolylines.forEach(p => map.removeLayer(p));
+                adminPolylines = [];
+                
+                const routes = await api.getAllRoutes();
+                const stops = await api.getAllStops();
+                
+                const stopMap = {};
+                stops.forEach(s => stopMap[s.id || s.stopId] = s);
+                
+                routes.forEach(route => {
+                    const start = stopMap[route.startStopId];
+                    const end = stopMap[route.endStopId];
+                    if(start && end && start.lat && start.lng && end.lat && end.lng) {
+                        const latlngs = [
+                            [start.lat, start.lng],
+                            [end.lat, end.lng]
+                        ];
+                        const polyline = L.polyline(latlngs, {
+                            color: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'), // Random color
+                            weight: 4,
+                            opacity: 0.8,
+                            dashArray: '5, 10'
+                        }).addTo(map);
+                        adminPolylines.push(polyline);
+                        
+                        L.marker([start.lat, start.lng]).addTo(map).bindPopup(`<b>${start.name}</b><br>Start of ${route.name}`);
+                        L.marker([end.lat, end.lng]).addTo(map).bindPopup(`<b>${end.name}</b><br>End of ${route.name}`);
+                    }
+                });
+            } catch(e) { console.error("Could not load routes visually", e); }
+        }
+
         async function createNewStop() {
             const name = document.getElementById('stopName').value;
+            const area = document.getElementById('stopArea').value;
+            const city = document.getElementById('stopCity').value;
+            const state = document.getElementById('stopState').value;
             const lat = document.getElementById('stopLat').value;
             const lng = document.getElementById('stopLng').value;
-            if(!name || !lat || !lng) return alert("Fill all fields or click the map for coordinates");
+            if(!name || !lat || !lng || !city || !state) return alert("Fill all required fields or click the map for coordinates");
             try {
-                const s = await api.createStop({ name, latitude: parseFloat(lat), longitude: parseFloat(lng) });
-                alert(`Created Stop ID: #${s.id}`);
+                const s = await api.createStop({ 
+                    name, 
+                    area,
+                    city,
+                    state,
+                    latitude: parseFloat(lat), 
+                    longitude: parseFloat(lng),
+                    isActive: true
+                });
+                alert(`Created Stop ID: #${s.id || s.stopId}`);
             } catch(e) { alert("Failed to create stop"); }
         }
 
@@ -197,10 +268,13 @@
 
         async function applyFare() {
             try {
-                await api.createFare({
+                await api.saveFare({
                     routeId: parseInt(document.getElementById('fRouteId').value),
-                    baseAmount: parseFloat(document.getElementById('fBaseAmt').value),
-                    perKmRate: parseFloat(document.getElementById('fPerKm').value)
+                    baseFare: parseFloat(document.getElementById('fBaseAmt').value),
+                    perKmCharge: parseFloat(document.getElementById('fPerKm').value),
+                    peakMultiplier: 1.0,
+                    offPeakMultiplier: 1.0,
+                    isActive: true
                 });
                 alert("Fare saved successfully!");
             } catch(e) { alert("Failed to apply fare"); }

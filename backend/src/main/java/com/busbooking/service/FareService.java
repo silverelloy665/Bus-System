@@ -28,4 +28,8 @@ public class FareService {
         if (newFare > oldFare * 1.25) return "WARNING: Unethical - may reduce demand";
         return "OK";
     }
+    @SuppressWarnings("null")
+    public Fare saveFare(Fare fare) {
+        return fareRepository.save(fare);
+    }
 }

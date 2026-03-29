@@ -66,8 +66,21 @@ const api = {
         const res = await fetch(`${BASE_URL}/fares/validate?${params}`);
         if (!res.ok) throw new Error('Failed to validate fare');
         return res.text();
+    },    async saveFare(fare) {
+        const res = await fetch(`${BASE_URL}/fares`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(fare)
+        });
+        if (!res.ok) throw new Error('Failed to save fare');
+        return res.json();
     },
-
+    // Routes
+    async getAllRoutes() {
+        const res = await fetch(`${BASE_URL}/routes`);
+        if (!res.ok) return [];
+        return res.json();
+    },
     // Stops
     async getAllStops() {
         const res = await fetch(`${BASE_URL}/stops`);
