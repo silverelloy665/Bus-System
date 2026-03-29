@@ -165,6 +165,28 @@
                     <canvas id="demandChart"></canvas>
                 </div>
             </div>
+
+            <div class="card" style="margin-top: 2rem;">
+                <div class="card-header">
+                    <h2>🚨 Anomaly Detection (Fake / Spam Bookings)</h2>
+                    <button class="btn btn-sec" onclick="loadAnomalies()">Scan Anomalies</button>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <table class="table" id="anomalyTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Detected At</th>
+                            </tr>
+                        </thead>
+                        <tbody id="anomalyTbody">
+                            <tr><td colspan="4">No anomalies detected.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
             
         </div>
     </div>
@@ -336,7 +358,35 @@
         }
         
         // Auto-load on init
-        setTimeout(loadPredictions, 1000);
+        setTimeout(() => { loadPredictions(); loadAnomalies(); }, 1000);
+
+        async function loadAnomalies() {
+            try {
+                const response = await fetch(`${api.baseUrl}/api/anomalies`, {
+                    headers: api.getHeaders()
+                });
+                const anomalies = await response.json();
+                const tbody = document.getElementById('anomalyTbody');
+                tbody.innerHTML = '';
+                if(anomalies.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4">No anomalies detected.</td></tr>';
+                    return;
+                }
+                anomalies.forEach(a => {
+                    const tr = document.createElement('tr');
+                    tr.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
+                    tr.innerHTML = `
+                        <td>#${a.anomalyId}</td>
+                        <td><strong>${a.type}</strong></td>
+                        <td>${a.description}</td>
+                        <td>${a.detectedAt}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch(e) {
+                console.error("Failed to load anomalies", e);
+            }
+        }
     </script>
 </body>
 </html>
