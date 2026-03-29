@@ -35,6 +35,9 @@ public class User {
     @Column(name = "balance")
     private Double balance;
 
+    @Column(name = "loyalty_points")
+    private Integer loyaltyPoints = 0;
+
     @Column(name = "current_lat")
     private Double currentLat;
 
