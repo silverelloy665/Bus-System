@@ -24,9 +24,30 @@
         .stat-box { background: var(--bg); padding: 15px; border-radius: 8px; text-align: center; border: 1px solid var(--border); }
         .stat-box h4 { margin: 0; font-size: 0.9rem; color: #6b7280; }
         .stat-box p { margin: 5px 0 0 0; font-size: 1.5rem; font-weight: bold; }
+        nav { background: var(--primary); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-radius: 8px; margin-bottom: 20px; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .logo { font-size: 1.2rem; font-weight: 700; cursor: pointer; }
+        .logout { color: white; text-decoration: none; font-weight: 500; cursor: pointer; }
+
+        /* Fixed Taskbar for Driver Actions */
+        .taskbar {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: var(--surface); padding: 15px 20px;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
+            display: flex; gap: 10px; z-index: 9999;
+            box-sizing: border-box; justify-content: center;
+        }
+        .taskbar .btn { margin-bottom: 0; flex: 1; max-width: 300px; }
     </style>
 </head>
-<body>
+<body style="padding-bottom: 80px;">
+
+    <!-- Taskbar / Navigation -->
+    <nav>
+        <div class="logo" onclick="window.location.href='index.html'">🚍 Driver Console</div>
+        <div class="nav-actions">
+            <a class="logout" onclick="window.location.href='index.html'">Logout</a>
+        </div>
+    </nav>
 
     <!-- Login Section -->
     <div id="loginSection" class="card">
@@ -63,8 +84,12 @@
 
         <div id="map"></div>
 
-        <button class="btn btn-update" id="btnUpdateLocation" onclick="forceLocationUpdate()">📍 PUSH MY LOCATION</button>
-        <button class="btn btn-danger" onclick="reportEmergency()">🚨 EMERGENCY / BREAKDOWN</button>
+    </div>
+
+    <!-- Fixed Bottom Taskbar for Actions -->
+    <div class="taskbar" id="driverTaskbar" style="display: none;">
+        <button class="btn btn-update" id="btnUpdateLocation" onclick="forceLocationUpdate()">📍 PUSH LOCATION</button>
+        <button class="btn btn-danger" onclick="reportEmergency()">🚨 SOS / BREAKDOWN</button>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
@@ -89,6 +114,7 @@
 
             document.getElementById('loginSection').style.display = 'none';
             document.getElementById('dashboardSection').style.display = 'block';
+            document.getElementById('driverTaskbar').style.display = 'flex';
             document.getElementById('displayBusId').innerText = currentBusId;
 
             initMap();
