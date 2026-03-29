@@ -313,7 +313,7 @@
             
             // Feature 21: Push Notifications Permission on Login
             if ('Notification' in window && navigator.serviceWorker) {
-                navigator.serviceWorker.register('/service-worker.js').then(() => {
+                navigator.serviceWorker.register('service-worker.js').then(() => {
                     if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
                         Notification.requestPermission().then(perm => {
                             console.log("Notification permission:", perm);
@@ -323,6 +323,9 @@
                     } else {
                         window.location.href = user.role === 'ADMIN' ? 'admin.html' : 'booking.html';
                     }
+                }).catch(err => {
+                    console.warn("ServiceWorker registration failed:", err);
+                    window.location.href = user.role === 'ADMIN' ? 'admin.html' : 'booking.html';
                 });
             } else {
                 window.location.href = user.role === 'ADMIN' ? 'admin.html' : 'booking.html';
