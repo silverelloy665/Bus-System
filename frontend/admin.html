@@ -231,7 +231,21 @@
                     </table>
                 </div>
             </div>
-
+              <!-- Crowd Heatmap Panel -->
+              <div class="card" style="margin-top: 2rem;">
+                  <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                      <h2>🔥 Crowd Heatmap (Boarding Origins)</h2>
+                      <div>
+                          <select id="heatmapTimeFilter" onchange="updateHeatmap()" style="padding: 5px; border-radius: 4px; border: 1px solid var(--border); margin-right: 10px;">
+                              <option value="lasthour">Last Hour</option>
+                              <option value="today" selected>Today</option>
+                              <option value="thisweek">This Week</option>
+                          </select>
+                          <button class="btn btn-primary" onclick="toggleHeatmap()">Toggle Heatmap</button>
+                      </div>
+                  </div>
+                  <div id="adminMap" style="height: 400px; width: 100%; margin-top: 1rem; border-radius: 8px; z-index: 1;"></div>
+              </div>
             <!-- Driver Management Panel -->
             <div class="card" style="margin-top: 2rem;">
                 <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
@@ -274,6 +288,7 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="api.js"></script>
     <script src="map.js"></script>
@@ -603,7 +618,53 @@
             } catch(e) { alert("Failed to update status"); }
         }
 
-        setTimeout(() => { loadPredictions(); loadAnomalies(); loadAnalytics(); loadDrivers(); }, 1000);
+        // Feature 19: Crowd Heatmap
+        let adminMap = null;
+        let heatLayer = null;
+        let isHeatmapVisible = true;
+
+        function initAdminMap() {
+            adminMap = L.map('adminMap').setView([19.0760, 72.8777], 10);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(adminMap);
+            updateHeatmap();
+        }
+
+        async function updateHeatmap() {
+            if (heatLayer) {
+                adminMap.removeLayer(heatLayer);
+            }
+            if (!isHeatmapVisible) return;
+
+            const timeFilter = document.getElementById('heatmapTimeFilter').value;
+            // Mock fetching coordinates from API based on bookings
+            // In a real scenario: api.heatmapData(timeFilter)
+            let heatData = [];
+            if (timeFilter === 'lasthour') {
+                heatData = [
+                    [19.0760, 72.8777, 0.8], [19.0800, 72.8800, 0.6]
+                ];
+            } else if (timeFilter === 'today') {
+                heatData = [
+                    [19.0760, 72.8777, 1.0], [19.0800, 72.8800, 0.8],
+                    [19.1000, 72.9000, 0.5], [19.0600, 72.8600, 0.9],
+                    [18.9690, 72.8205, 1.0], [18.9692, 72.8201, 0.7]
+                ];
+            } else {
+                for(let i=0; i<50; i++) {
+                    heatData.push([19.0 + Math.random()*0.2, 72.8 + Math.random()*0.2, Math.random()]);
+                }
+            }
+            heatLayer = L.heatLayer(heatData, {radius: 25, blur: 15, maxZoom: 14}).addTo(adminMap);
+        }
+
+        function toggleHeatmap() {
+            isHeatmapVisible = !isHeatmapVisible;
+            updateHeatmap();
+        }
+
+        setTimeout(() => { loadPredictions(); loadAnomalies(); loadAnalytics(); loadDrivers(); initAdminMap(); }, 1000);
     </script>
 </body>
 </html>
