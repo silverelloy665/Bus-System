@@ -447,8 +447,8 @@
 
                 document.getElementById('fareDisplay').innerText = `₹${total.toFixed(2)}`;
                 document.getElementById('earnPointsDisplay').innerText = `⭐ Earn ${Math.floor(total/10)} pts on this trip`;
-            } else {
-                document.getElementById('earnPointsDisplay').innerText = "";
+            } else {                let total = selectedSeatClassBonus;
+                document.getElementById('fareDisplay').innerText = `₹${total.toFixed(2)}`;                document.getElementById('earnPointsDisplay').innerText = "";
             }
         }
 
