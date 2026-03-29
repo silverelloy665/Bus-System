@@ -1,287 +1,320 @@
 ﻿<!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BusBooking - Login</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class'
-        }
-    </script>
     <style>
-        body { transition: background-color 0.3s ease, color 0.3s ease; }
-        .glass { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.2); }
-        .dark .glass { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.1); }
+        :root {
+            --bg-body: #f4f7fb;
+            --bg-card: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --border: #e5e7eb;
+            --input-bg: #f9fafb;
+            --nav-bg: #2563eb;
+            --danger: #dc2626;
+        }
+        [data-theme="dark"] {
+            --bg-body: #111827;
+            --bg-card: #1f2937;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --border: #374151;
+            --input-bg: #111827;
+            --nav-bg: #1e3a8a;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Navigation */
+        nav {
+            background-color: var(--nav-bg);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .logo { font-size: 1.5rem; font-weight: 800; cursor: pointer; }
+        .theme-toggle {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white; border: none; padding: 0.5rem 1rem;
+            border-radius: 9999px; cursor: pointer; font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        .theme-toggle:hover { background-color: rgba(255, 255, 255, 0.3); }
+
+        /* Main Container & Card */
+        .main-content {
+            flex-grow: 1; display: flex; align-items: center; justify-content: center;
+            padding: 2rem; background: linear-gradient(135deg, rgba(37,99,235,0.05), rgba(79,70,229,0.05));
+        }
+        .auth-card {
+            background-color: var(--bg-card); width: 100%; max-w: 450px;
+            padding: 2.5rem; border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--border); transition: transform 0.3s;
+        }
+        
+        .card-header { text-align: center; margin-bottom: 2rem; font-size: 1.8rem; font-weight: 700; color: var(--text-main); }
+        
+        /* Tabs */
+        .tabs {
+            display: flex; background-color: var(--bg-body); padding: 5px;
+            border-radius: 10px; margin-bottom: 1.5rem; border: 1px solid var(--border);
+        }
+        .tab-btn {
+            flex: 1; padding: 0.75rem; border: none; background: transparent;
+            color: var(--text-muted); font-weight: 600; cursor: pointer;
+            border-radius: 6px; transition: all 0.2s; font-size: 0.95rem;
+        }
+        .tab-btn.active {
+            background-color: var(--bg-card); color: var(--primary);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Forms */
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem; }
+        input, select {
+            width: 100%; padding: 0.75rem 1rem; font-size: 1rem;
+            border-radius: 8px; border: 1px solid var(--border);
+            background-color: var(--input-bg); color: var(--text-main);
+            transition: all 0.2s; outline: none;
+        }
+        input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.2); }
+        
+        .btn-submit {
+            width: 100%; padding: 0.875rem; border: none; border-radius: 8px;
+            background-color: var(--primary); color: white;
+            font-size: 1.1rem; font-weight: bold; cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s; margin-top: 1rem;
+            box-shadow: 0 4px 6px rgba(37,99,235,0.2);
+        }
+        .btn-submit:hover { background-color: var(--primary-hover); }
+        .btn-submit:active { transform: translateY(1px); box-shadow: 0 2px 4px rgba(37,99,235,0.2); }
+        
+        .error-msg { color: var(--danger); text-align: center; height: 20px; font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .hidden { display: none !important; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 min-h-screen flex flex-col font-sans">
-    <nav class="bg-blue-600 dark:bg-gray-800 text-white p-4 shadow-lg flex justify-between items-center transition-colors duration-300">
-        <h1 class="text-2xl font-extrabold tracking-tight flex items-center gap-2">🚍 BusBooking</h1>
-        <button onclick="toggleTheme()" class="px-4 py-2 rounded-full bg-blue-700 dark:bg-gray-700 hover:opacity-80 transition shadow-inner font-semibold">
-            <span id="themeIcon">☀️ Light Mode</span>
-        </button>
+<body>
+
+    <nav>
+        <div class="logo">🚍 BusBooking</div>
+        <button class="theme-toggle" id="themeIcon" onclick="toggleTheme()">☀️ Light Mode</button>
     </nav>
 
-    <div class="flex-grow flex items-center justify-center p-4 bg-gradient-to-br from-blue-100 to-indigo-200 dark:from-gray-800 dark:to-gray-900">
-        <div id="authContainer" class="glass w-full max-w-lg p-8 rounded-2xl shadow-2xl relative overflow-hidden transition-all duration-300">
-            <!-- Top Accent Line -->
-            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-400 to-indigo-500"></div>
-            
-            <h2 id="formTitle" class="text-3xl font-bold mb-6 text-center">Welcome Back</h2>
-            
-            <!-- Toggle Login / Register / Admin -->
-            <div class="flex bg-gray-200 dark:bg-gray-800 rounded-lg p-1 mb-6 shadow-inner text-sm sm:text-base">
-                <button id="btnTabLogin" onclick="switchTab('login')" class="flex-1 py-2 rounded-md font-bold shadow bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 transition-all">Login</button>
-                <button id="btnTabRegister" onclick="switchTab('register')" class="flex-1 py-2 rounded-md font-bold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-all">Register</button>
-                <button id="btnTabAdmin" onclick="switchTab('admin')" class="flex-1 py-2 rounded-md font-bold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-all">Admin</button>
+    <div class="main-content">
+        <div class="auth-card">
+            <h2 class="card-header" id="formTitle">Welcome Back</h2>
+
+            <!-- Toggle Tabs -->
+            <div class="tabs">
+                <button id="btnTabLogin" onclick="switchTab('login')" class="tab-btn active">Login</button>
+                <button id="btnTabRegister" onclick="switchTab('register')" class="tab-btn">Register</button>
+                <button id="btnTabAdmin" onclick="switchTab('admin')" class="tab-btn">Admin</button>
             </div>
 
-            <div class="space-y-4 relative">
-                <div>
-                    <label class="block text-sm font-semibold mb-1">Username</label>
-                    <input type="text" id="username" class="w-full p-3 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="Enter your username">
-                </div>
-
-                <div id="registerFields" class="hidden space-y-4">
-                    <div>
-                        <label class="block text-sm font-semibold mb-1">Phone Number</label>
-                        <input type="tel" id="phone" class="w-full p-3 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="10-digit mobile number">
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-semibold mb-1">State</label>
-                            <select id="state" onchange="updateCities()" class="w-full p-3 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
-                                <option value="">Select State</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold mb-1">City</label>
-                            <select id="city" onchange="updateAreas()" class="w-full p-3 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
-                                <option value="">Select City</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold mb-1">Area / Locality</label>
-                        <select id="area" class="w-full p-3 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
-                            <option value="">Select Area</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold mb-1">Password</label>
-                    <input type="password" id="password" class="w-full p-3 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="Min 6 characters">
-                </div>
-
-                <p id="authMsg" class="text-red-500 dark:text-red-400 font-semibold text-center text-sm min-h-[20px]"></p>
-
-                <button id="submitBtn" onclick="submitAuth()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold p-3 rounded-lg shadow-lg transform active:scale-[0.98] transition-all">
-                    Log In
-                </button>
+            <!-- Form -->
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="username" placeholder="Enter your username">
             </div>
+
+            <div id="registerFields" class="hidden">
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="phone" placeholder="10-digit mobile number">
+                </div>
+                
+                <div class="form-group grid-2">
+                    <div>
+                        <label>State</label>
+                        <select id="state" onchange="updateCities()"><option value="">Select State</option></select>
+                    </div>
+                    <div>
+                        <label>City</label>
+                        <select id="city" onchange="updateAreas()"><option value="">Select City</option></select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Area / Locality</label>
+                    <select id="area"><option value="">Select Area</option></select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="password" placeholder="Min 6 characters">
+            </div>
+
+            <div class="error-msg" id="authMsg"></div>
+
+            <button id="submitBtn" class="btn-submit" onclick="submitAuth()">Log In</button>
         </div>
     </div>
 
     <script src="api.js"></script>
     <script>
-        // Location Data for Dropdowns
         const locationData = {
-            "Maharashtra": {
-                "Mumbai": ["Bandra West", "Andheri East", "Dadar", "Juhu", "Colaba"],
-                "Pune": ["Kothrud", "Hinjewadi", "Shivajinagar", "Viman Nagar"]
-            },
-            "Karnataka": {
-                "Bengaluru": ["Koramangala", "Indiranagar", "Whitefield", "Jayanagar"],
-                "Mysuru": ["Vijayanagar", "Gokulam", "Saraswathipuram"]
-            },
-            "Delhi": {
-                "New Delhi": ["Connaught Place", "Hauz Khas", "Saket", "Vasant Kunj"]
-            },
-            "Tamil Nadu": {
-                "Mangaluru": ["Hebbal", "Gokulam"]
-            }
+            "Maharashtra": { "Mumbai": ["Bandra West", "Andheri East", "Dadar", "Juhu"], "Pune": ["Kothrud", "Hinjewadi", "Shivajinagar"] },
+            "Karnataka": { "Bengaluru": ["Koramangala", "Indiranagar", "Whitefield"], "Mysuru": ["Vijayanagar", "Gokulam"] },
+            "Delhi": { "New Delhi": ["Connaught Place", "Hauz Khas", "Saket"] }
         };
 
         function populateStates() {
             const stateSelect = document.getElementById('state');
-            for (const state in locationData) {
-                stateSelect.add(new Option(state, state));
-            }
+            for (const state in locationData) stateSelect.add(new Option(state, state));
         }
 
         function updateCities() {
-            const stateSelect = document.getElementById('state');
+            const state = document.getElementById('state').value;
             const citySelect = document.getElementById('city');
             const areaSelect = document.getElementById('area');
-            
             citySelect.innerHTML = '<option value="">Select City</option>';
             areaSelect.innerHTML = '<option value="">Select Area</option>';
-            
-            const selectedState = stateSelect.value;
-            if (selectedState && locationData[selectedState]) {
-                for (const city in locationData[selectedState]) {
-                    citySelect.add(new Option(city, city));
-                }
+            if (state && locationData[state]) {
+                for (const city in locationData[state]) citySelect.add(new Option(city, city));
             }
         }
 
         function updateAreas() {
-            const stateSelect = document.getElementById('state');
-            const citySelect = document.getElementById('city');
+            const state = document.getElementById('state').value;
+            const city = document.getElementById('city').value;
             const areaSelect = document.getElementById('area');
-            
             areaSelect.innerHTML = '<option value="">Select Area</option>';
-            
-            const selectedState = stateSelect.value;
-            const selectedCity = citySelect.value;
-            
-            if (selectedState && selectedCity && locationData[selectedState][selectedCity]) {
-                locationData[selectedState][selectedCity].forEach(area => {
-                    areaSelect.add(new Option(area, area));
-                });
+            if (state && city && locationData[state][city]) {
+                locationData[state][city].forEach(a => areaSelect.add(new Option(a, a)));
             }
         }
-
-        // Initialize Dropdowns on Load
         populateStates();
 
-        let currentMode = 'login';
-        
         function toggleTheme() {
             const html = document.documentElement;
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
+            if (html.getAttribute('data-theme') === 'dark') {
+                html.removeAttribute('data-theme');
                 document.getElementById('themeIcon').innerText = '🌙 Dark Mode';
                 localStorage.setItem('theme', 'light');
             } else {
-                html.classList.add('dark');
+                html.setAttribute('data-theme', 'dark');
                 document.getElementById('themeIcon').innerText = '☀️ Light Mode';
                 localStorage.setItem('theme', 'dark');
             }
         }
+        // Load theme prefs
+        if (localStorage.getItem('theme') === 'light') toggleTheme(); 
 
-        if (localStorage.getItem('theme') === 'light') {
-            toggleTheme(); // it defaults to dark structurally, so toggle switches to light
-        }
-
+        let currentMode = 'login';
         function switchTab(mode) {
             currentMode = mode;
             const regFields = document.getElementById('registerFields');
-            const btnLogin = document.getElementById('btnTabLogin');
-            const btnReg = document.getElementById('btnTabRegister');
-            const btnAdmin = document.getElementById('btnTabAdmin');
-            const submitBtn = document.getElementById('submitBtn');
+            const btnSubmit = document.getElementById('submitBtn');
             const title = document.getElementById('formTitle');
             const msg = document.getElementById('authMsg');
+            
+            // UI Resets
             msg.innerText = "";
             document.getElementById('password').value = "";
-
-            // Reset tabs
-            btnLogin.className = "flex-1 py-2 rounded-md font-bold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-all";
-            btnReg.className = "flex-1 py-2 rounded-md font-bold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-all";
-            btnAdmin.className = "flex-1 py-2 rounded-md font-bold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-all";
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
 
             if (mode === 'login') {
                 regFields.classList.add('hidden');
-                btnLogin.className = "flex-1 py-2 rounded-md font-bold shadow bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 transition-all";
-                submitBtn.innerText = "Log In";
+                document.getElementById('btnTabLogin').classList.add('active');
+                btnSubmit.innerText = "Log In";
                 title.innerText = "Welcome Back";
             } else if (mode === 'register') {
                 regFields.classList.remove('hidden');
-                btnReg.className = "flex-1 py-2 rounded-md font-bold shadow bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 transition-all";
-                submitBtn.innerText = "Create Account";
+                document.getElementById('btnTabRegister').classList.add('active');
+                btnSubmit.innerText = "Create Account";
                 title.innerText = "Join BusBooking";
             } else if (mode === 'admin') {
                 regFields.classList.add('hidden');
-                btnAdmin.className = "flex-1 py-2 rounded-md font-bold shadow bg-white dark:bg-gray-700 text-red-600 dark:text-red-400 transition-all";
-                submitBtn.innerText = "Admin Log In";
+                document.getElementById('btnTabAdmin').classList.add('active');
+                btnSubmit.innerText = "Admin Log In";
                 title.innerText = "Admin Portal";
             }
         }
 
+        // Logic
         async function submitAuth() {
             const msg = document.getElementById('authMsg');
             const username = document.getElementById('username').value.trim();
             const pass = document.getElementById('password').value;
-            const submitBtn = document.getElementById('submitBtn');
-
             msg.innerText = "";
 
-            if (!username || !pass) {
-                msg.innerText = "Username and password are required.";
-                return;
-            }
+            if (!username || !pass) return msg.innerText = "Username and password required.";
 
             if (currentMode === 'login' || currentMode === 'admin') {
                 try {
                     const user = await api.loginUser(username, pass);
                     if (currentMode === 'admin' && user.role !== 'ADMIN') {
-                        msg.innerText = "Access denied. Not an administrator.";
-                        return;
+                        return msg.innerText = "Access denied. Admin only.";
                     }
                     showApp(user);
-                } catch (e) {
-                    msg.innerText = "Invalid credentials!";
-                }
+                } catch (e) { msg.innerText = "Invalid credentials!"; }
             } else {
                 const phone = document.getElementById('phone').value.trim();
                 const state = document.getElementById('state').value.trim();
                 const city = document.getElementById('city').value.trim();
                 const area = document.getElementById('area').value.trim();
-
-                if (!phone || phone.length < 10) {
-                    msg.innerText = "Phone number must be at least 10 digits.";
-                    return;
-                }
-                if (pass.length < 6) {
-                    msg.innerText = "Password must be at least 6 characters.";
-                    return;
-                }
+                if (phone.length < 10) return msg.innerText = "Valid 10-digit phone required.";
+                if (pass.length < 6) return msg.innerText = "Password min 6 characters.";
 
                 if (area && city) {
-                    submitBtn.innerText = "Locating Coordinates...";
+                    document.getElementById('submitBtn').innerText = "Locating...";
                     try {
-                        const query = encodeURIComponent(area + ', ' + city + ', ' + state);
-                        const geoRes = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + query);
+                        const q = encodeURIComponent(area + ', ' + city + ', ' + state);
+                        const geoRes = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + q);
                         const geoData = await geoRes.json();
                         if(geoData && geoData.length > 0) {
                             localStorage.setItem('preferredLat', geoData[0].lat);
                             localStorage.setItem('preferredLng', geoData[0].lon);
                         }
-                    } catch(err) {
-                        console.warn("Geocoding failed.");
-                    }
+                    } catch(err) { console.warn("Geocoding failed"); }
                 }
 
                 try {
-                    submitBtn.innerText = "Joining...";
-                    const user = await api.registerUser({ username: username, phone: phone, passwordHash: pass });
+                    document.getElementById('submitBtn').innerText = "Joining...";
+                    const user = await api.registerUser({ username, phone, passwordHash: pass });
                     showApp(user);
                 } catch (e) {
-                    msg.innerText = "Registration failed. Username may exist.";
-                    submitBtn.innerText = "Create Account";
+                    msg.innerText = "Registration failed.";
+                    document.getElementById('submitBtn').innerText = "Create Account";
                 }
             }
         }
 
         function showApp(user) {
             localStorage.setItem('currentUser', JSON.stringify(user));
-            if (user.role === 'ADMIN') {
-                window.location.href = 'admin.html';
-            } else {
-                window.location.href = 'booking.html';
-            }
+            window.location.href = user.role === 'ADMIN' ? 'admin.html' : 'booking.html';
         }
-
+        
+        // Auto-login
         const savedUser = localStorage.getItem('currentUser');
-        if (savedUser) {
-            showApp(JSON.parse(savedUser));
-        }
+        if (savedUser) showApp(JSON.parse(savedUser));
     </script>
 </body>
 </html>

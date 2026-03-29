@@ -1,170 +1,226 @@
-﻿<!DOCTYPE html>
-<html lang="en" class="dark">
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Booking - BusBooking</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class'
-        }
-    </script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
-        body { transition: background-color 0.3s ease, color 0.3s ease; }
-        #map { height: 300px; width: 100%; border-radius: 0.5rem; margin-bottom: 20px;}
-        .glass { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.2); }
-        .dark .glass { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.1); }
+        :root {
+            --bg-body: #f4f7fb;
+            --bg-card: #ffffff;
+            --text-main: #1f2937;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success: #16a34a;
+            --success-hover: #15803d;
+            --border: #e5e7eb;
+            --input-bg: #f9fafb;
+            --nav-bg: #2563eb;
+            --highlight: #eff6ff;
+        }
+        [data-theme="dark"] {
+            --bg-body: #111827;
+            --bg-card: #1f2937;
+            --text-main: #f9fafb;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --success: #22c55e;
+            --success-hover: #16a34a;
+            --border: #374151;
+            --input-bg: #111827;
+            --nav-bg: #1e3a8a;
+            --highlight: rgba(59, 130, 246, 0.15);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-body); color: var(--text-main);
+            min-height: 100vh; transition: background-color 0.3s, color 0.3s;
+        }
+
+        nav {
+            background-color: var(--nav-bg); color: white; padding: 1rem 2rem;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .logo { font-size: 1.5rem; font-weight: 800; cursor: pointer; }
+        .nav-actions { display: flex; gap: 1rem; align-items: center; }
+        .theme-toggle {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white; border: none; padding: 0.5rem 1rem;
+            border-radius: 9999px; cursor: pointer; font-weight: bold;
+        }
+        .logout { color: white; text-decoration: none; font-weight: bold; cursor: pointer; }
+
+        .container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+        .card {
+            background-color: var(--bg-card); padding: 2rem;
+            border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
+        }
+        
+        h2 { font-size: 1.8rem; margin-bottom: 1.5rem; }
+
+        .search-bar { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+        input, select {
+            flex-grow: 1; padding: 0.8rem 1rem; font-size: 1rem;
+            border-radius: 8px; border: 1px solid var(--border);
+            background-color: var(--input-bg); color: var(--text-main);
+            outline: none; transition: border-color 0.2s;
+        }
+        input:focus, select:focus { border-color: var(--primary); }
+        .btn {
+            background-color: var(--primary); color: white; border: none;
+            padding: 0 1.5rem; border-radius: 8px; font-weight: bold;
+            cursor: pointer; cursor: pointer; transition: 0.2s; font-size: 1rem;
+        }
+        .btn:hover { background-color: var(--primary-hover); }
+        
+        #map { height: 350px; width: 100%; border-radius: 12px; margin-bottom: 1.5rem; border: 1px solid var(--border); z-index: 1;}
+
+        .info-panel {
+            background-color: var(--input-bg); padding: 1.25rem;
+            border-radius: 12px; border: 1px solid var(--border); margin-bottom: 1.5rem;
+        }
+        label { display: block; font-weight: 600; margin-bottom: 0.5rem; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+
+        .fare-box {
+            background-color: var(--highlight); border: 1px solid var(--primary);
+            padding: 1.5rem; border-radius: 12px; display: flex;
+            justify-content: space-between; align-items: center; margin-bottom: 1.5rem;
+        }
+        .fare-box span { font-size: 1.2rem; font-weight: bold; }
+        .fare-amount { font-size: 2.2rem; font-weight: 800; color: var(--primary); }
+
+        .radio-group { display: flex; gap: 1.5rem; margin-bottom: 2rem; }
+        .radio-label { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; cursor: pointer; }
+
+        .btn-success {
+            background-color: var(--success); width: 100%; padding: 1.2rem;
+            font-size: 1.25rem; border-radius: 12px;
+        }
+        .btn-success:hover { background-color: var(--success-hover); }
+
+        #statusMsg { text-align: center; font-weight: bold; font-size: 1.1rem; margin-top: 1.5rem; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 font-sans min-h-screen">
-    <nav class="bg-blue-600 dark:bg-gray-800 text-white p-4 shadow-lg flex justify-between items-center transition-colors duration-300">
-        <h1 class="text-2xl font-extrabold tracking-tight flex items-center gap-2 cursor-pointer" onclick="window.location.href='index.html'">🚍 BusBooking</h1>
-        <div class="flex items-center gap-4">
-            <button onclick="toggleTheme()" class="px-4 py-2 rounded-full bg-blue-700 dark:bg-gray-700 hover:opacity-80 transition shadow-inner font-semibold">
-                <span id="themeIcon">☀️ Light Mode</span>
-            </button>
-            <a href="index.html" class="hover:underline font-bold" onclick="localStorage.removeItem('currentUser')">Logout</a>
+<body>
+    <nav>
+        <div class="logo" onclick="window.location.href='index.html'">🚍 BusBooking</div>
+        <div class="nav-actions">
+            <button class="theme-toggle" id="themeIcon" onclick="toggleTheme()">☀️ Light Mode</button>
+            <a class="logout" onclick="localStorage.removeItem('currentUser'); window.location.href='index.html'">Logout</a>
         </div>
     </nav>
 
-    <div class="max-w-4xl mx-auto mt-8 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl transition-colors duration-300 border dark:border-gray-700">
-        <h2 class="text-2xl font-bold mb-6">Live Bus Map & Booking</h2>
-        
-        <!-- Location Search using Nominatim -->
-        <div class="mb-4 flex gap-2">
-            <input type="text" id="areaSearch" placeholder="Search locality or area (e.g., Bandra, Mumbai)" class="flex-1 p-3 border dark:border-gray-600 rounded-lg shadow-inner bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 outline-none transition" onkeydown="if(event.key === 'Enter') searchArea()">
-            <button onclick="searchArea()" class="bg-blue-600 text-white font-bold px-6 py-3 rounded-lg hover:bg-blue-700 shadow transform active:scale-95 transition">Search</button>
-        </div>
-
-        <div id="map" class="shadow-md border dark:border-gray-700"></div>
-
-        <div class="mb-5">
-            <label class="block font-bold mb-2">Available Nearby Buses</label>
-            <div id="busList" class="p-3 bg-gray-50 dark:bg-gray-700 border dark:border-gray-600 rounded-lg text-sm mb-3">Loading nearby buses...</div>
-            <select id="busSelect" class="w-full p-3 border dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
-                <option value="">-- Select a Bus --</option>
-            </select>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4 mb-5">
-            <div>
-                <label class="block font-bold mb-2">From Stop ID:</label>
-                <input type="number" id="fromStop" value="1" class="w-full p-3 border dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
+    <div class="container">
+        <div class="card">
+            <h2>Live Bus Map & Booking</h2>
+            
+            <div class="search-bar">
+                <input type="text" id="areaSearch" placeholder="Search locality or area (e.g. Bandra, Mumbai)">
+                <button class="btn" onclick="searchArea()">Search</button>
             </div>
-            <div>
-                <label class="block font-bold mb-2">To Stop ID:</label>
-                <input type="number" id="toStop" value="5" class="w-full p-3 border dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition" onchange="updateFare()">
-            </div>
-        </div>
 
-        <div class="mb-5 p-4 bg-blue-50 dark:bg-gray-700 border border-blue-200 dark:border-gray-600 rounded-xl shadow-inner">
-            <div class="flex justify-between items-center">
-                <span class="font-bold text-lg">Total Fare:</span>
-                <span id="fareDisplay" class="font-bold text-3xl text-blue-600 dark:text-blue-400">₹0.00</span>
-            </div>
-            <p class="text-sm text-blue-600 dark:text-blue-300 mt-2 font-semibold" id="peakIndicator">Dynamic pricing applies based on route and time.</p>
-        </div>
+            <div id="map"></div>
 
-        <div class="mb-6">
-            <label class="block font-bold mb-3">Payment Method</label>
-            <div class="flex gap-6">
-                <label class="flex items-center cursor-pointer"><input type="radio" name="payment" value="ONLINE" class="mr-2 w-5 h-5" checked> <span class="font-bold">Online Payment</span></label>
-                <label class="flex items-center cursor-pointer"><input type="radio" name="payment" value="CASH" class="mr-2 w-5 h-5"> <span class="font-bold">Cash to Conductor</span></label>
+            <div class="info-panel">
+                <label>Available Nearby Buses</label>
+                <div id="busList" style="margin-bottom: 10px; font-size: 0.95rem; color: var(--primary); font-weight: 600;">Loading buses...</div>
+                <select id="busSelect"><option value="">-- Select a Bus --</option></select>
             </div>
-        </div>
 
-        <button onclick="submitBooking()" class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white text-xl font-bold p-4 rounded-xl shadow-lg transform active:scale-[0.98] transition">
-            Confirm Booking
-        </button>
-        <div class="mt-4"><p id="statusMsg" class="text-center font-bold text-lg"></p></div>
+            <div class="grid-2">
+                <div>
+                    <label>From Stop ID:</label>
+                    <input type="number" id="fromStop" value="1">
+                </div>
+                <div>
+                    <label>To Stop ID:</label>
+                    <input type="number" id="toStop" value="5" onchange="updateFare()">
+                </div>
+            </div>
+
+            <div class="fare-box">
+                <span>Total Fare:</span>
+                <div class="fare-amount" id="fareDisplay">₹0.00</div>
+            </div>
+
+            <label style="margin-bottom: 1rem;">Payment Method</label>
+            <div class="radio-group">
+                <label class="radio-label"><input type="radio" name="payment" value="ONLINE" checked> Online Payment</label>
+                <label class="radio-label"><input type="radio" name="payment" value="CASH"> Cash to Conductor</label>
+            </div>
+
+            <button class="btn btn-success" onclick="submitBooking()">Confirm Booking</button>
+            <div id="statusMsg"></div>
+        </div>
     </div>
 
-    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="api.js"></script>
     <script src="map.js"></script>
     <script>
         function toggleTheme() {
             const html = document.documentElement;
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
+            if (html.getAttribute('data-theme') === 'dark') {
+                html.removeAttribute('data-theme');
                 document.getElementById('themeIcon').innerText = '🌙 Dark Mode';
                 localStorage.setItem('theme', 'light');
             } else {
-                html.classList.add('dark');
+                html.setAttribute('data-theme', 'dark');
                 document.getElementById('themeIcon').innerText = '☀️ Light Mode';
                 localStorage.setItem('theme', 'dark');
             }
         }
-
-        if (localStorage.getItem('theme') === 'light') {
-            const html = document.documentElement;
-            html.classList.remove('dark');
-            document.getElementById('themeIcon').innerText = '🌙 Dark Mode';
-        }
+        if (localStorage.getItem('theme') === 'light') toggleTheme(); 
 
         let currentUser = JSON.parse(localStorage.getItem('currentUser'));
-        if (!currentUser) {
-            window.location.href = 'index.html';
-        }
+        if (!currentUser) window.location.href = 'index.html';
 
         async function loadBuses() {
             try {
-                // Approximate default or user location
                 const lat = currentUser.currentLat || 19.0760;
                 const lng = currentUser.currentLng || 72.8777;
                 
                 const buses = await api.getNearbyBuses(lat, lng);
                 const busSelect = document.getElementById('busSelect');
+                busSelect.innerHTML = '<option value="">-- Select a Bus --</option>';
                 document.getElementById('busList').innerText = `Found ${buses.length} buses nearby!`;
                 
                 buses.forEach(b => {
-                    const opt = document.createElement('option');
-                    opt.value = b.id;
-                    opt.text = `Bus #${b.id} (Route ${b.routeId})`;
-                    busSelect.add(opt);
+                    busSelect.add(new Option(`Bus #${b.id} (Route ${b.routeId})`, b.id));
                 });
-                updateFare(); // initial load
-            } catch(e) {
-                document.getElementById('busList').innerText = 'Failed to load buses.';
-            }
+                updateFare();
+            } catch(e) { document.getElementById('busList').innerText = 'Failed to load buses.'; }
         }
 
         async function updateFare() {
             try {
                 const fare = await api.calculateFare(1);
                 document.getElementById('fareDisplay').innerText = `₹${fare.toFixed(2)}`;
-            } catch(e) {
-                console.warn("Could not calculate fare dynamically");
-            }
+            } catch(e) { console.warn("Could not calculate fare dynamically"); }
         }
 
         async function submitBooking() {
             const busId = document.getElementById('busSelect').value;
-            if(!busId) {
-                alert("Please select a bus!"); return;
-            }
+            if(!busId) { alert("Please select a bus!"); return; }
             
-            const booking = {
-                userId: currentUser.id,
-                busId: parseInt(busId),
-                status: "CONFIRMED"
-            };
-
-            const statusMsg = document.getElementById('statusMsg');
+            const msg = document.getElementById('statusMsg');
             try {
-                const res = await api.createBooking(booking);
-                statusMsg.className = "text-center font-bold text-green-500 text-lg";
-                statusMsg.innerText = `Success! Booking ID: #${res.id}`;
+                const res = await api.createBooking({ userId: currentUser.id, busId: parseInt(busId), status: "CONFIRMED" });
+                msg.style.color = "var(--success)";
+                msg.innerText = `Success! Booking ID: #${res.id}`;
             } catch(e) {
-                statusMsg.className = "text-center font-bold text-red-500 text-lg";
-                statusMsg.innerText = `Failed to create booking.`;
+                msg.style.color = "var(--danger)";
+                msg.innerText = `Failed to create booking.`;
             }
         }
 
-        // Init
         const prefLat = localStorage.getItem('preferredLat');
         const prefLng = localStorage.getItem('preferredLng');
         const lat = prefLat ? parseFloat(prefLat) : (currentUser?.currentLat || 19.0760); 
@@ -172,38 +228,21 @@
         initMap(lat, lng);
         loadBuses();
 
-        // Area Search using Nominatim API
         async function searchArea() {
             const query = document.getElementById('areaSearch').value;
             if (!query) return;
-
-            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`;
             try {
-                const response = await fetch(url);
-                const data = await response.json();
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+                const data = await res.json();
                 if (data && data.length > 0) {
-                    const newLat = parseFloat(data[0].lat);
-                    const newLng = parseFloat(data[0].lon);
-                    
-                    // Update Map and userMarker
+                    const newLat = parseFloat(data[0].lat); const newLng = parseFloat(data[0].lon);
                     map.setView([newLat, newLng], 14);
-                    if (userMarker) {
-                        userMarker.setLatLng([newLat, newLng]);
-                    }
-                    
-                    // Update user's current loc in memory and fetch buses
-                    currentUser.currentLat = newLat;
-                    currentUser.currentLng = newLng;
+                    if (userMarker) userMarker.setLatLng([newLat, newLng]);
+                    currentUser.currentLat = newLat; currentUser.currentLng = newLng;
                     loadBuses();
-                } else {
-                    alert("Location not found. Please try another area.");
-                }
-            } catch (err) {
-                console.error("Geocoding failed:", err);
-                alert("Failed to search area.");
-            }
+                } else { alert("Location not found."); }
+            } catch(e) { alert("Search failed."); }
         }
     </script>
 </body>
 </html>
-
