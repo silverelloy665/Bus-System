@@ -134,6 +134,7 @@
     <nav>
         <div class="logo" onclick="window.location.href='index.html'">🚍 BusBooking</div>
         <div class="nav-actions">
+            <button id="loyaltyBadge" onclick="showLoyaltyModal()" style="background:#f59e0b; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; font-weight:bold; margin-right:10px;">⭐ 0 Points</button>
             <button id="walletBadge" onclick="showWalletModal()" style="background:var(--success); color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; font-weight:bold; margin-right:10px;">💰 Wallet: ₹0</button>
             <button class="theme-toggle" id="themeIcon" onclick="toggleTheme()">☀️ Light Mode</button>
             <a class="logout" onclick="localStorage.removeItem('currentUser'); window.location.href='index.html'">Logout</a>
@@ -170,7 +171,10 @@
 
             <div class="fare-box">
                 <span>Total Fare:</span>
-                <div class="fare-amount" id="fareDisplay">₹0.00</div>
+                <div style="text-align: right;">
+                    <div class="fare-amount" id="fareDisplay">₹0.00</div>
+                    <div id="earnPointsDisplay" style="color:#f59e0b; font-weight:bold; font-size:0.85em; margin-top:5px;"></div>
+                </div>
             </div>
 
             <label style="margin-bottom: 1rem; display: block;">Select Seat Class</label>
@@ -196,10 +200,18 @@
             </div>
 
             <label style="margin-bottom: 1rem;">Payment Method</label>
-            <div class="radio-group" style="margin-bottom: 1.5rem;">
+            <div class="radio-group" style="margin-bottom: 1rem;">
                 <label class="radio-label"><input type="radio" name="payment" value="ONLINE" checked> Online Payment</label>
                 <label class="radio-label"><input type="radio" name="payment" value="WALLET"> Wallet Transfer</label>
                 <label class="radio-label"><input type="radio" name="payment" value="CASH"> Cash to Conductor</label>
+            </div>
+            
+            <div id="pointsEarnText" style="text-align: right; color: var(--success); font-weight: bold; font-size: 0.9rem; margin-bottom: 10px; margin-top: -10px;"></div>
+            
+            <div style="margin-bottom: 1.5rem; padding: 10px; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; font-weight: 600;">
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                    <input type="checkbox" id="usePointsToggle" onchange="renderTotalFare()"> Use Points (100 Points = ₹10 off)
+                </label>
             </div>
 
             <button class="btn btn-success" onclick="submitBooking()">Confirm Booking</button>
@@ -257,7 +269,17 @@
 
         let stopsCache = [];
         let baseFare = 0;
-        let selectedSeatClassBonus = 0;       
+        let selectedSeatClassBonus = 0;
+        let loyaltyBalance = 0;
+
+        // Loyalty Logic
+        async function fetchLoyaltyBalance() {
+            try {
+                const res = await fetch(`http://localhost:8080/api/loyalty/${currentUser.userId || currentUser.id}`);
+                loyaltyBalance = await res.json();
+                document.getElementById('loyaltyBadge').innerText = `⭐ ${loyaltyBalance} Points`;
+            } catch(e) { console.error('Failed to fetch loyalty pts'); }
+        }
 
         // Wallet Logic
         async function fetchWalletBalance() {
@@ -318,7 +340,7 @@
         }
         
         // Setup initial wallet info
-        setTimeout(fetchWalletBalance, 500);
+        setTimeout(() => { fetchWalletBalance(); fetchLoyaltyBalance(); }, 500);
 
         async function loadStops() {
             try {
@@ -388,8 +410,31 @@
 
         function renderTotalFare() {
             if (baseFare > 0) {
-                const total = baseFare + selectedSeatClassBonus;
+                let total = baseFare + selectedSeatClassBonus;
+                
+                let pointsUsed = 0;
+                let discount = 0;
+                const usePts = document.getElementById('usePointsToggle').checked;
+                
+                if (usePts && loyaltyBalance >= 100) {
+                    // Maximum points we can use is the smaller of:
+                    // 1) all our balance (rounded down to hundreds)
+                    // 2) enough points to cover the total amount totally
+                    const maxUsableByPoints = Math.floor(loyaltyBalance / 100) * 100;
+                    pointsUsed = maxUsableByPoints;
+                    discount = pointsUsed * 0.10; // 100 pts = ₹10
+                    
+                    if (discount > total) {
+                        discount = total;
+                        pointsUsed = total * 10;
+                    }
+                    total -= discount;
+                }
+
                 document.getElementById('fareDisplay').innerText = `₹${total.toFixed(2)}`;
+                document.getElementById('earnPointsDisplay').innerText = `⭐ Earn ${Math.floor(total/10)} pts on this trip`;
+            } else {
+                document.getElementById('earnPointsDisplay').innerText = "";
             }
         }
 
@@ -406,7 +451,26 @@
             
             const msg = document.getElementById('statusMsg');
             
-            const totalFare = baseFare + selectedSeatClassBonus;
+            let totalFare = baseFare + selectedSeatClassBonus;
+            
+            let pointsUsed = 0;
+            const usePts = document.getElementById('usePointsToggle').checked;
+            if (usePts && loyaltyBalance >= 100) {
+                pointsUsed = Math.floor(loyaltyBalance / 100) * 100;
+                let discount = pointsUsed * 0.10;
+                if (discount > totalFare) { discount = totalFare; pointsUsed = totalFare * 10; }
+                totalFare -= discount;
+            }
+
+            if (pointsUsed > 0) {
+                try {
+                    await fetch(`http://localhost:8080/api/loyalty/redeem`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: currentUser.userId || currentUser.id, points: pointsUsed })
+                    });
+                } catch(e) { console.warn("Failed to redeem points"); }
+            }
+
             if (paymentMethod === 'WALLET' && totalFare > 0) {
                 try {
                     const deductRes = await fetch(`http://localhost:8080/api/wallet/deduct`, {
@@ -433,12 +497,16 @@
                     toStopId: parseInt(toId),
                     seatClass: seatClass,
                     paymentMethod: paymentMethod,
-                    status: "CONFIRMED" 
+                    status: "CONFIRMED",
+                    fare: totalFare 
                 };
                 
                 const res = await api.createBooking(payload);
                 msg.style.color = "var(--success)";
-                msg.innerHTML = `Success! Booking ID: #${res.id || res.bookingId}  <div style="font-size: 0.9em; margin-top: 5px;">Class: <b>${seatClass}</b></div>`;
+                msg.innerHTML = `Success! Booking ID: #${res.id || res.bookingId}  <div style="font-size: 0.9em; margin-top: 5px;">Class: <b>${seatClass}</b> | Paid: ₹${totalFare.toFixed(2)}</div>`;
+                
+                // Refresh points
+                setTimeout(fetchLoyaltyBalance, 1000);
             } catch(e) {
                 msg.style.color = "var(--danger)";
                 msg.innerText = `Failed to create booking.`;

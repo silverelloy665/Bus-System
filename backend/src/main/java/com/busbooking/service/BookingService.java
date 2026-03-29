@@ -13,8 +13,17 @@ import org.springframework.lang.NonNull;
 public class BookingService {
     @Autowired
     private BookingRepository bookingRepository;
+
+    @Autowired
+    private LoyaltyService loyaltyService;
+
     public Booking createBooking(@NonNull Booking booking) {
-        return bookingRepository.save(booking);
+        Booking saved = bookingRepository.save(booking);
+        // Calculate points (1 point per 10 spent)
+        if (saved.getFare() != null && saved.getFare() > 0) {
+            loyaltyService.earnPointsFromBooking(saved.getUserId(), saved.getFare());
+        }
+        return saved;
     }
     public Booking cancelBooking(@NonNull Long bookingId) {
         Optional<Booking> opt = bookingRepository.findById(bookingId);

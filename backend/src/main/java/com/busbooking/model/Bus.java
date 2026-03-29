@@ -44,6 +44,7 @@ public class Bus {
     @Column(name = "capacity")
     private Integer capacity;
 
+    @Builder.Default
     @Column(name = "passenger_count")
     private Integer passengerCount = 0;
 

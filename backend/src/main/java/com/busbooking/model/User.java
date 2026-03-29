@@ -32,9 +32,11 @@ public class User {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
+    @Builder.Default
     @Column(name = "balance")
-    private Double balance;
+    private Double balance = 0.0;
 
+    @Builder.Default
     @Column(name = "loyalty_points")
     private Integer loyaltyPoints = 0;
 
