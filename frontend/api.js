@@ -56,8 +56,12 @@ const api = {
     },
 
     // Fares
-    async calculateFare(routeId) {
-        const res = await fetch(`${BASE_URL}/fares/route/${routeId}/calculate`);
+    async calculateFare(routeId, busId) {
+        let url = `${BASE_URL}/fares/route/${routeId}/calculate`;
+        if (busId) {
+            url += `?busId=${busId}`;
+        }
+        const res = await fetch(url);
         if (!res.ok) throw new Error('Failed to calculate fare');
         return res.json();
     },

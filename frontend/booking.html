@@ -172,6 +172,7 @@
             <div class="fare-box">
                 <span>Total Fare:</span>
                 <div style="text-align: right;">
+                    <div id="smartPricingStatus" style="font-size:0.8rem; font-weight:bold; margin-bottom:5px; display:none;"></div>
                     <div class="fare-amount" id="fareDisplay">₹0.00</div>
                     <div id="earnPointsDisplay" style="color:#f59e0b; font-weight:bold; font-size:0.85em; margin-top:5px;"></div>
                 </div>
@@ -386,13 +387,26 @@
             try {
                 // If a bus is selected, get its routeId, else fallback to 1 for demo
                 let routeId = 1;
+                let busId = null;
                 if (busSelect.value && busSelect.selectedIndex > 0) {
+                    busId = parseInt(busSelect.value);
                     const text = busSelect.options[busSelect.selectedIndex].text;
                     const match = text.match(/Route (\d+)/);
                     if (match) routeId = parseInt(match[1]);
                 }
-                
-                baseFare = await api.calculateFare(routeId);
+
+                const fareData = await api.calculateFare(routeId, busId);
+                baseFare = fareData.fare;
+                const statusDiv = document.getElementById('smartPricingStatus');
+                if(statusDiv) {
+                    if (fareData.message && fareData.message.length > 0) {
+                        statusDiv.innerText = fareData.message;
+                        statusDiv.style.color = fareData.status === 'DISCOUNT' ? 'var(--success)' : 'var(--danger)';
+                        statusDiv.style.display = 'block';
+                    } else {
+                        statusDiv.style.display = 'none';
+                    }
+                }
                 renderTotalFare();
             } catch(e) { 
                 console.warn("Could not calculate fare dynamically"); 
