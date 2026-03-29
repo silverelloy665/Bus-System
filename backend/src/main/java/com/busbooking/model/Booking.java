@@ -59,8 +59,22 @@ public class Booking {
     @Column(name = "seat_class", length = 50)
     private String seatClass;
 
+    @Builder.Default
     @Column(name = "passenger_count")
-    private Integer passengerCount;
+    private Integer passengerCount = 1;
+
+    // Feature 14: Details of passengers for group booking (stored as JSON string)
+    @Column(name = "passengers", columnDefinition = "TEXT")
+    private String passengers;
+
+    // Feature 15: Scheduled Booking timestamp
+    @Column(name = "scheduled_for")
+    private Long scheduledFor;
+
+    // Feature 16: Ride Sharing
+    @Builder.Default
+    @Column(name = "is_shared")
+    private Boolean isShared = false;
 
     @Column(name = "special_requirements", length = 255)
     private String specialRequirements;
