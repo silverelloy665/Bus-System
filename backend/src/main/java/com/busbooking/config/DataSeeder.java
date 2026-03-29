@@ -4,10 +4,16 @@ import com.busbooking.dao.BusRepository;
 import com.busbooking.dao.RouteRepository;
 import com.busbooking.dao.StopRepository;
 import com.busbooking.dao.UserRepository;
+import com.busbooking.dao.DriverRepository;
+import com.busbooking.dao.AlertRepository;
+import com.busbooking.dao.AnomalyLogRepository;
 import com.busbooking.model.Bus;
 import com.busbooking.model.Route;
 import com.busbooking.model.Stop;
 import com.busbooking.model.User;
+import com.busbooking.model.Driver;
+import com.busbooking.model.Alert;
+import com.busbooking.model.AnomalyLog;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,7 +26,10 @@ public class DataSeeder {
     public CommandLineRunner seedData(UserRepository userRepository, 
                                       BusRepository busRepository, 
                                       RouteRepository routeRepository,
-                                      StopRepository stopRepository) {
+                                      StopRepository stopRepository,
+                                      DriverRepository driverRepository,
+                                      AlertRepository alertRepository,
+                                      AnomalyLogRepository anomalyLogRepository) {
         return args -> {
             // Seed Admin User
             if (userRepository.findAll().stream().noneMatch(u -> "admin".equals(u.getUsername()))) {
@@ -62,6 +71,62 @@ public class DataSeeder {
                 busRepository.save(b1);
                 busRepository.save(b2);
                 busRepository.save(b3);
+            }
+
+            if (driverRepository.count() == 0) {
+                driverRepository.save(Driver.builder()
+                        .name("Ramesh Kumar")
+                        .phone("+91-9876543210")
+                        .licenseNumber("DL-1001-A")
+                        .busId(1L)
+                        .status("Active")
+                        .joinDate("2021-05-10")
+                        .rating(4.8)
+                        .totalTrips(120)
+                        .build());
+                driverRepository.save(Driver.builder()
+                        .name("Suresh Singh")
+                        .phone("+91-8765432109")
+                        .licenseNumber("DL-1002-B")
+                        .busId(2L)
+                        .status("Active")
+                        .joinDate("2022-01-15")
+                        .rating(4.5)
+                        .totalTrips(85)
+                        .build());
+                driverRepository.save(Driver.builder()
+                        .name("Rajesh Patel")
+                        .phone("+91-7654321098")
+                        .licenseNumber("MH-1003-C")
+                        .busId(3L)
+                        .status("On Leave")
+                        .joinDate("2020-11-20")
+                        .rating(4.9)
+                        .totalTrips(210)
+                        .build());
+            }
+
+            if (anomalyLogRepository.count() == 0) {
+                anomalyLogRepository.save(new AnomalyLog("Multiple Bookings", "User ID 45 made 10 bookings in 5 mins"));
+                anomalyLogRepository.save(new AnomalyLog("Payment Failure Spike", "Route 2 recorded 15 failed payment attempts"));
+                anomalyLogRepository.save(new AnomalyLog("Unusual Demand", "Route 5 demand spiked by 200% abruptly"));
+            }
+
+            if (alertRepository.count() == 0) {
+                alertRepository.save(Alert.builder()
+                        .busId(1L)
+                        .type("Maintenance Alert")
+                        .message("Engine oil temperature high")
+                        .timestamp(System.currentTimeMillis())
+                        .resolved(false)
+                        .build());
+                alertRepository.save(Alert.builder()
+                        .busId(2L)
+                        .type("Schedule Delay")
+                        .message("Bus running 30 mins behind schedule")
+                        .timestamp(System.currentTimeMillis() - 3600000)
+                        .resolved(false)
+                        .build());
             }
         };
     }
