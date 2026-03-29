@@ -11,6 +11,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/reviews")
 @CrossOrigin(origins = "*")
+@SuppressWarnings("null")
 public class RouteReviewController {
 
     @Autowired
