@@ -134,6 +134,7 @@
     <nav>
         <div class="logo" onclick="window.location.href='index.html'">🚍 BusBooking</div>
         <div class="nav-actions">
+            <button id="lostItemBtn" onclick="document.getElementById('lostItemModal').style.display='flex'" style="background:var(--danger); color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; font-weight:bold; margin-right:10px;">🏷️ Lost & Found</button>
             <button id="loyaltyBadge" onclick="showLoyaltyModal()" style="background:#f59e0b; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; font-weight:bold; margin-right:10px;">⭐ 0 Points</button>
             <button id="walletBadge" onclick="showWalletModal()" style="background:var(--success); color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; font-weight:bold; margin-right:10px;">💰 Wallet: ₹0</button>
             <button class="theme-toggle" id="themeIcon" onclick="toggleTheme()">☀️ Light Mode</button>
@@ -165,8 +166,16 @@
                 </div>
                 <div>
                     <label>To Stop:</label>
-                    <select id="toStop" onchange="updateFare()"><option value="">-- Loading Stops --</option></select>
+                    <div style="display:flex; gap:10px;">
+                        <select id="toStop" onchange="updateFare()" style="flex:1;"><option value="">-- Loading Stops --</option></select>
+                        <button class="btn" style="width:auto; margin:0; padding:10px; background:var(--bg-body); color:red; border:1px solid var(--border);" onclick="saveFavoriteRoute()" title="Save as Favorite">❤️</button>
+                    </div>
                 </div>
+            </div>
+
+            <div id="favoritesSection" style="margin-bottom: 1.5rem; padding: 10px; background: var(--bg-body); border: 1px solid var(--border); border-radius: 8px;">
+                <h4 style="margin-top:0">⭐ My Favorite Routes</h4>
+                <div id="favoritesList" style="display:flex; gap:10px; overflow-x:auto; margin-top:10px;"></div>
             </div>
 
             <div class="fare-box">
@@ -283,6 +292,51 @@
             <h4>Recent Transactions</h4>
             <div class="tx-list" id="txList">
                 <!-- Transactions go here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Rating Modal -->
+    <div class="modal-overlay" id="ratingModal">
+        <div class="modal" style="max-width: 400px; text-align:center;">
+            <button class="close-btn" onclick="document.getElementById('ratingModal').style.display='none'">&times;</button>
+            <h2>How was your trip?</h2>
+            <div style="margin: 20px 0; text-align:left;">
+                <label>🚌 Bus Cleanliness:</label>
+                <input type="number" id="busRating" min="1" max="5" value="5" style="width:100%; margin-bottom:10px;">
+                
+                <label>👨‍✈️ Driver Behavior:</label>
+                <input type="number" id="driverRating" min="1" max="5" value="5" style="width:100%; margin-bottom:10px;">
+                
+                <label>🕒 Punctuality:</label>
+                <input type="number" id="punctualityRating" min="1" max="5" value="5" style="width:100%; margin-bottom:10px;">
+                
+                <label>💬 Comment (Optional):</label>
+                <textarea id="ratingComment" rows="3" style="width:100%; margin-bottom:10px; border:1px solid var(--border); border-radius:4px; padding:10px;"></textarea>
+            </div>
+            <button class="btn btn-success" onclick="submitRating()">Submit Rating</button>
+        </div>
+    </div>
+
+    <!-- Lost & Found Modal -->
+    <div class="modal-overlay" id="lostItemModal">
+        <div class="modal">
+            <button class="close-btn" onclick="document.getElementById('lostItemModal').style.display='none'">&times;</button>
+            <h2>🏷️ Report Lost Item</h2>
+            <div style="margin: 15px 0;">
+                <label>Bus/Route you traveled on:</label>
+                <input type="text" id="lostBus" placeholder="e.g. Bus MH-12-CD-5678" style="width:100%; margin-bottom:10px; padding:8px; border:1px solid var(--border); border-radius:4px;">
+                
+                <label>Date of Travel:</label>
+                <input type="date" id="lostDate" style="width:100%; margin-bottom:10px; padding:8px; border:1px solid var(--border); border-radius:4px;">
+                
+                <label>Item Description:</label>
+                <textarea id="lostDesc" rows="3" placeholder="Describe the item..." style="width:100%; margin-bottom:10px; padding:8px; border:1px solid var(--border); border-radius:4px;"></textarea>
+                
+                <label>Contact Phone:</label>
+                <input type="text" id="lostPhone" placeholder="Your mobile number" style="width:100%; margin-bottom:15px; padding:8px; border:1px solid var(--border); border-radius:4px;">
+                
+                <button class="btn btn-success" style="width:100%; margin:0;" onclick="submitLostItem()">Submit Report</button>
             </div>
         </div>
     </div>
@@ -684,10 +738,49 @@
                 
                 // Refresh points
                 setTimeout(fetchLoyaltyBalance, 1000);
+                
+                // Feature 17: Show rating modal after pseudo trip completion
+                setTimeout(() => {
+                    document.getElementById('ratingModal').style.display='flex';
+                }, 3000);
             } catch(e) {
                 msg.style.color = "var(--danger)";
                 msg.innerText = `Failed to create booking.`;
             }
+        }
+
+        async function submitRating() {
+            try {
+                await fetch(`http://localhost:8080/api/ratings`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: currentUser.id || currentUser.userId,
+                        busId: parseInt(document.getElementById('busSelect').value),
+                        busRating: parseInt(document.getElementById('busRating').value),
+                        driverRating: parseInt(document.getElementById('driverRating').value),
+                        punctualityRating: parseInt(document.getElementById('punctualityRating').value),
+                        comment: document.getElementById('ratingComment').value
+                    })
+                });
+                alert("Thank you for your rating!");
+                document.getElementById('ratingModal').style.display='none';
+            } catch(e) { alert("Failed to submit rating."); }
+        }
+
+        async function submitLostItem() {
+            try {
+                await fetch(`http://localhost:8080/api/lost-and-found`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        reportedBy: currentUser.id || currentUser.userId,
+                        description: document.getElementById('lostDesc').value + " (Bus: " + document.getElementById('lostBus').value + ")",
+                        foundDate: document.getElementById('lostDate').value,
+                        contactPhone: document.getElementById('lostPhone').value
+                    })
+                });
+                alert("Lost item reported successfully. We will contact you if found.");
+                document.getElementById('lostItemModal').style.display='none';
+            } catch(e) { alert("Failed to report lost item."); }
         }
 
         const prefLat = localStorage.getItem('preferredLat');
@@ -729,6 +822,53 @@
                 document.getElementById('busSelect').dispatchEvent(new Event('change'));
             }
         });
+
+        // Feature 20: Favorite Routes
+        async function loadFavorites() {
+            try {
+                const res = await fetch(`http://localhost:8080/api/favorites/user/${currentUser.userId || currentUser.id}`);
+                const favs = await res.json();
+                const list = document.getElementById('favoritesList');
+                if (favs.length === 0) {
+                    list.innerHTML = `<span style="opacity:0.7; font-size:0.9em;">No favorite routes yet.</span>`;
+                } else {
+                    list.innerHTML = favs.map(f => `
+                        <button class="btn-outline" style="min-width:120px; text-align:center;" onclick="bookFavorite(${f.fromStopId}, ${f.toStopId})">
+                            <div style="font-weight:bold;">${f.nickname}</div>
+                        </button>
+                    `).join('');
+                }
+            } catch(e) {
+                console.warn("Failed to load favorites");
+            }
+        }
+
+        async function saveFavoriteRoute() {
+            const fromId = document.getElementById('fromStop').value;
+            const toId = document.getElementById('toStop').value;
+            if(!fromId || !toId) { alert("Please select stops first!"); return; }
+            
+            const nickname = prompt("Enter a nickname for this route (e.g. Home, Office):");
+            if (!nickname) return;
+
+            try {
+                await fetch(`http://localhost:8080/api/favorites`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: currentUser.userId || currentUser.id, fromStopId: parseInt(fromId), toStopId: parseInt(toId), nickname: nickname })
+                });
+                alert("Route saved to favorites!");
+                loadFavorites();
+            } catch(e) { alert("Failed to save favorite."); }
+        }
+
+        function bookFavorite(fromId, toId) {
+            document.getElementById('fromStop').value = fromId;
+            document.getElementById('toStop').value = toId;
+            updateFare();
+            alert("Favorite locations applied. Please select a bus.");
+        }
+
+        setTimeout(loadFavorites, 1000);
 
         async function searchArea() {
             const query = document.getElementById('areaSearch').value;

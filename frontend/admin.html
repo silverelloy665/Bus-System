@@ -245,6 +245,29 @@
                       </div>
                   </div>
                   <div id="adminMap" style="height: 400px; width: 100%; margin-top: 1rem; border-radius: 8px; z-index: 1;"></div>
+              </div>              <!-- Lost & Found Panel -->
+              <div class="card" style="margin-top: 2rem;">
+                  <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                      <h2>🏷️ Lost & Found Dashboard</h2>
+                      <button class="btn btn-sec" onclick="loadLostItems()" style="padding: 10px 15px;">Refresh List</button>
+                  </div>
+                  <div style="margin-top: 1rem; overflow-x:auto;">
+                      <table class="table" style="width:100%; border-collapse:collapse; text-align:left;">
+                          <thead>
+                              <tr style="border-bottom:2px solid var(--border);">
+                                  <th style="padding:10px;">ID</th>
+                                  <th>Description</th>
+                                  <th>Date Reported</th>
+                                  <th>Contact Details</th>
+                                  <th>Status</th>
+                                  <th>Action</th>
+                              </tr>
+                          </thead>
+                          <tbody id="lostItemsTbody">
+                              <tr><td colspan="6">Loading...</td></tr>
+                          </tbody>
+                      </table>
+                  </div>
               </div>
             <!-- Driver Management Panel -->
             <div class="card" style="margin-top: 2rem;">
@@ -664,7 +687,48 @@
             updateHeatmap();
         }
 
-        setTimeout(() => { loadPredictions(); loadAnomalies(); loadAnalytics(); loadDrivers(); initAdminMap(); }, 1000);
+        async function loadLostItems() {
+            try {
+                const response = await fetch(`${api.baseUrl}/api/lost-and-found`);
+                const items = await response.json();
+                const tbody = document.getElementById('lostItemsTbody');
+                tbody.innerHTML = '';
+                if(items.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6">No items reported.</td></tr>';
+                    return;
+                }
+                items.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.style.borderBottom = '1px solid var(--border)';
+                    tr.innerHTML = `
+                        <td style="padding:10px;">#${item.id}</td>
+                        <td>${item.description}</td>
+                        <td>${new Date(item.foundDate).toLocaleDateString()}</td>
+                        <td>${item.contactEmail || item.contactPhone || 'N/A'}</td>
+                        <td>
+                            <select onchange="updateLostItemStatus(${item.id}, this.value)" style="padding:5px; border-radius:4px;">
+                                <option value="REPORTED" ${item.status === 'REPORTED' ? 'selected' : ''}>Reported</option>
+                                <option value="CLAIMED" ${item.status === 'CLAIMED' ? 'selected' : ''}>Claimed</option>
+                            </select>
+                        </td>
+                        <td><button class="btn btn-sec" style="padding:5px 10px; font-size:0.8rem;" onclick="alert('Notification Sent!')">Notify</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) {
+                console.error("Failed to load lost items", e);
+                document.getElementById('lostItemsTbody').innerHTML = '<tr><td colspan="6">Failed to load items.</td></tr>';
+            }
+        }
+
+        async function updateLostItemStatus(id, newStatus) {
+            try {
+                await fetch(`${api.baseUrl}/api/lost-and-found/${id}/status?status=${newStatus}`, { method: 'PUT', headers: api.getHeaders() });
+                loadLostItems();
+            } catch(e) { alert("Failed to update status"); }
+        }
+
+        setTimeout(() => { loadPredictions(); loadAnomalies(); loadAnalytics(); loadDrivers(); loadLostItems(); initAdminMap(); }, 1000);
     </script>
 </body>
 </html>
