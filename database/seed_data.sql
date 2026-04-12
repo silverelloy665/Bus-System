@@ -1,68 +1,59 @@
--- Bus Booking System - Sample Data
+-- DML Commands (Data Manipulation Language) to Populate Demo Data
 
--- Insert Sample Customers
-INSERT INTO customers (name, email, phone, password, address, city, state, postal_code) VALUES
-('Aarush Sharma', 'aarush@example.com', '+91-9876543210', 'hashed_password_1', '123 Main St', 'Delhi', 'Delhi', '110001'),
-('Priya Patel', 'priya@example.com', '+91-9876543211', 'hashed_password_2', '456 Oak Ave', 'Mumbai', 'Maharashtra', '400001'),
-('Rajesh Kumar', 'rajesh@example.com', '+91-9876543212', 'hashed_password_3', '789 Pine Rd', 'Bangalore', 'Karnataka', '560001'),
-('Anjali Verma', 'anjali@example.com', '+91-9876543213', 'hashed_password_4', '321 Elm St', 'Hyderabad', 'Telangana', '500001'),
-('Vikram Singh', 'vikram@example.com', '+91-9876543214', 'hashed_password_5', '654 Maple Dr', 'Pune', 'Maharashtra', '411001');
+-- Insert Customers
+INSERT INTO customers (first_name, last_name, email, phone, password_hash) VALUES 
+('Rahul', 'Sharma', 'ramesh@example.com', '9876543210', 'hashed_pass_123'),
+('Priya', 'Singh', 'priya@example.com', '9876543211', 'hashed_pass_456');
 
--- Insert Sample Buses
-INSERT INTO buses (bus_name, bus_number, capacity, bus_type, operator_name, ac_status, amenities) VALUES
-('Express Deluxe', 'DB-001', 50, 'AC Sleeper', 'Travel King', TRUE, 'WiFi, USB Charging, Blankets'),
-('City Comfort', 'DB-002', 45, 'AC Seater', 'City Travels', TRUE, 'Reclining Seats, WiFi, Charging'),
-('Highway Star', 'DB-003', 55, 'AC Sleeper', 'Road Master', TRUE, 'WiFi, USB Port, Meal Service'),
-('Rapid Runner', 'DB-004', 50, 'AC Seater', 'Express Tours', TRUE, 'WiFi, Reading Light, Recline'),
-('Comfort Plus', 'DB-005', 48, 'AC Semi-Sleeper', 'Premium Travel', TRUE, 'WiFi, Charging, Blankets');
+-- Insert Buses
+INSERT INTO buses (bus_number, capacity, bus_type, operator_name, ac_status) VALUES 
+('MH-01-AB-1234', 40, 'SLEEPER', 'VRL Travels', TRUE),
+('KA-02-XY-9876', 50, 'SEATER', 'KSRTC', FALSE);
 
--- Insert Sample Routes
-INSERT INTO routes (route_name, starting_point, ending_point, distance_km, estimated_duration_minutes) VALUES
-('Delhi to Mumbai', 'Delhi', 'Mumbai', 1440, 1320),
-('Mumbai to Bangalore', 'Mumbai', 'Bangalore', 1000, 900),
-('Delhi to Bangalore', 'Delhi', 'Bangalore', 2150, 1860),
-('Pune to Hyderabad', 'Pune', 'Hyderabad', 570, 480),
-('Delhi to Jaipur', 'Delhi', 'Jaipur', 240, 240);
+-- Insert Amenities (Applying 1NF to avoid comma-separated values)
+INSERT INTO amenities (name) VALUES ('WiFi'), ('Water Bottle'), ('Blanket'), ('Charging Point');
 
--- Insert Sample Schedules
-INSERT INTO schedules (bus_id, route_id, departure_time, arrival_time, departure_date, available_seats, price, status) VALUES
-(1, 1, '18:00:00', '08:00:00', DATE_ADD(CURDATE(), INTERVAL 1 DAY), 50, 1500.00, 'AVAILABLE'),
-(2, 2, '09:00:00', '18:00:00', DATE_ADD(CURDATE(), INTERVAL 1 DAY), 45, 1200.00, 'AVAILABLE'),
-(3, 3, '20:00:00', '12:00:00', DATE_ADD(CURDATE(), INTERVAL 2 DAY), 55, 2000.00, 'AVAILABLE'),
-(4, 4, '14:00:00', '20:00:00', DATE_ADD(CURDATE(), INTERVAL 1 DAY), 50, 800.00, 'AVAILABLE'),
-(5, 5, '06:00:00', '10:00:00', DATE_ADD(CURDATE(), INTERVAL 1 DAY), 48, 500.00, 'AVAILABLE'),
-(1, 1, '20:00:00', '10:00:00', DATE_ADD(CURDATE(), INTERVAL 3 DAY), 50, 1500.00, 'AVAILABLE'),
-(2, 2, '11:00:00', '20:00:00', DATE_ADD(CURDATE(), INTERVAL 2 DAY), 45, 1200.00, 'AVAILABLE');
+-- Map Amenities to Buses
+INSERT INTO bus_amenities (bus_id, amenity_id) VALUES 
+(1, 1), (1, 2), (1, 3), (1, 4), -- Bus 1 has everything
+(2, 2); -- Bus 2 only has Water
 
--- Insert Sample Bookings
-INSERT INTO bookings (customer_id, schedule_id, seat_numbers, number_of_seats, total_price, booking_status, payment_status) VALUES
-(1, 1, 'A1,A2', 2, 3000.00, 'CONFIRMED', 'PAID'),
-(2, 2, 'B5,B6,B7', 3, 3600.00, 'CONFIRMED', 'PAID'),
-(3, 3, 'C10', 1, 2000.00, 'CONFIRMED', 'PENDING'),
-(4, 4, 'D3,D4,D5,D6', 4, 3200.00, 'CONFIRMED', 'PAID'),
-(5, 5, 'E1,E2', 2, 1000.00, 'PENDING', 'PENDING');
+-- Insert Stops (Normalizing physical locations for 3NF)
+INSERT INTO stops (name, city, state, latitude, longitude) VALUES 
+('Andheri East', 'Mumbai', 'Maharashtra', 19.1136, 72.8697),
+('Bandra West', 'Mumbai', 'Maharashtra', 19.0596, 72.8295),
+('Dadar', 'Mumbai', 'Maharashtra', 19.0178, 72.8478),
+('Pune Majestic', 'Pune', 'Maharashtra', 18.5204, 73.8567);
 
--- Insert Sample Payments
-INSERT INTO payments (booking_id, customer_id, amount, payment_method, transaction_id, payment_status) VALUES
-(1, 1, 3000.00, 'Credit Card', 'TXN-001-2024', 'SUCCESS'),
-(2, 2, 3600.00, 'Debit Card', 'TXN-002-2024', 'SUCCESS'),
-(4, 4, 3200.00, 'UPI', 'TXN-004-2024', 'SUCCESS');
+-- Insert Routes
+INSERT INTO routes (route_name) VALUES 
+('Mumbai Local Express'),
+('Mumbai to Pune Night Rider');
 
--- Insert Sample Reviews
-INSERT INTO reviews (booking_id, customer_id, schedule_id, rating, review_text) VALUES
-(1, 1, 1, 5, 'Excellent service, comfortable bus, arrived on time.'),
-(2, 2, 2, 4, 'Good journey, the bus was clean and comfortable.'),
-(4, 4, 4, 5, 'Outstanding experience, will book again!');
+-- Map Stops to Routes (Route sequence details)
+INSERT INTO route_stops (route_id, stop_id, stop_sequence, distance_from_start_km) VALUES 
+(1, 1, 1, 0.0),      -- Starts at Andheri
+(1, 2, 2, 8.5),      -- Goes to Bandra
+(1, 3, 3, 14.2),     -- Ends at Dadar
+(2, 3, 1, 0.0),      -- Starts at Dadar
+(2, 4, 2, 150.0);    -- Ends at Pune
 
--- Insert Sample Seats (for bus DB-001)
-INSERT INTO seats (bus_id, seat_number, seat_type, is_available) VALUES
-(1, 'A1', 'Window', FALSE),
-(1, 'A2', 'Middle', FALSE),
-(1, 'A3', 'Aisle', TRUE),
-(1, 'A4', 'Window', TRUE),
-(1, 'A5', 'Middle', TRUE);
+-- Insert Schedules
+INSERT INTO schedules (bus_id, route_id, departure_date, departure_time, arrival_time, price, status) VALUES 
+(1, 1, '2026-04-12', '08:00:00', '09:30:00', 50.00, 'AVAILABLE'),
+(2, 2, '2026-04-12', '22:00:00', '02:00:00', 450.00, 'AVAILABLE');
 
--- Insert Sample Admin
-INSERT INTO admins (username, email, password, role) VALUES
-('admin', 'admin@busbooking.com', 'hashed_admin_password', 'ADMIN'),
-('support', 'support@busbooking.com', 'hashed_support_password', 'SUPPORT');
+-- Insert Bookings (Transaction Records)
+INSERT INTO bookings (customer_id, schedule_id, total_price, booking_status) VALUES 
+(1, 1, 100.00, 'CONFIRMED'),
+(2, 2, 450.00, 'CONFIRMED');
+
+-- Map Booking Seats (Resolving 1NF violation of 'seat_numbers VARCHAR(255)' with individual rows)
+INSERT INTO booking_seats (booking_id, seat_number) VALUES 
+(1, 'A1'), (1, 'A2'),  -- Customer 1 booked 2 seats
+(2, 'U4');             -- Customer 2 booked 1 seat
+
+-- Insert Bus Live Locations (Simulating the active map points)
+INSERT INTO bus_live_locations (bus_id, current_lat, current_lng) VALUES 
+(1, 19.0760, 72.8777),  -- Somewhere between Andheri and Bandra
+(2, 18.9690, 72.8205);

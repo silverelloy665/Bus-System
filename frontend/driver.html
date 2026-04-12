@@ -119,6 +119,21 @@
 
             initMap();
             startAutoUpdate();
+            setupWebSocket();
+        }
+
+        function setupWebSocket() {
+            const ws = new WebSocket('ws://localhost:8080/ws/bus-location');
+            ws.onmessage = (event) => {
+                const bus = JSON.parse(event.data);
+                if (bus.id === currentBusId || bus.busId === currentBusId) {
+                    if (busMarker) {
+                        busMarker.setLatLng([bus.currentLat, bus.currentLng]);
+                        map.setView([bus.currentLat, bus.currentLng]);
+                    }
+                }
+            };
+            ws.onclose = () => setTimeout(setupWebSocket, 5000);
         }
 
         function initMap() {

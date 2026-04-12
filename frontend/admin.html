@@ -127,6 +127,7 @@
                     <div id="kpiUsers" style="font-size: 1.5rem; font-weight: bold; margin-top: 5px;">0</div>
                 </div>
             </div>
+            
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
                 <div>
                     <h3 style="text-align: center; margin-bottom: 10px; font-size: 1rem;">Daily Revenue (Last 30 Days)</h3>
@@ -151,20 +152,6 @@
     </div>
 
     <div class="container">
-        <!-- Map Panel -->
-        <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h2>📍 Geo Live Tracking</h2>
-                <button class="btn btn-auto" onclick="visualizeAllRoutes()" style="margin-bottom: 10px; background: var(--secondary);">Show All Routes</button>
-            </div>
-            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <input type="text" id="adminAreaSearch" placeholder="Search Area/City (e.g. Pune, Bangalore)" style="flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
-                <button class="btn" style="width: auto; padding: 0 20px;" onclick="adminSearchArea()">Search Map</button>
-            </div>
-            <div id="map"></div>
-            <p class="map-help">* Click on the map to automatically fill latitude & longitude for new stops.</p>
-        </div>
-
         <!-- Management Panel -->
         <div class="card">
             <div class="section">
@@ -231,6 +218,21 @@
                     </table>
                 </div>
             </div>
+        </div>
+
+        <!-- Map Panel -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>📍 Geo Live Tracking</h2>
+                <button class="btn btn-auto" onclick="visualizeAllRoutes()" style="margin-bottom: 10px; background: var(--secondary);">Show All Routes</button>
+            </div>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <input type="text" id="adminAreaSearch" placeholder="Search Area/City (e.g. Pune, Bangalore)" style="flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+                <button class="btn" style="width: auto; padding: 0 20px;" onclick="adminSearchArea()">Search Map</button>
+            </div>
+            <div id="map"></div>
+            <p class="map-help">* Click on the map to automatically fill latitude & longitude for new stops.</p>
+        </div>
               <!-- Crowd Heatmap Panel -->
               <div class="card" style="margin-top: 2rem;">
                   <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
@@ -403,8 +405,8 @@
                     area,
                     city,
                     state,
-                    latitude: parseFloat(lat), 
-                    longitude: parseFloat(lng),
+                    lat: parseFloat(lat), 
+                    lng: parseFloat(lng),
                     isActive: true
                 });
                 alert(`Created Stop ID: #${s.id || s.stopId}`);
@@ -415,8 +417,8 @@
             const name = document.getElementById('routeName').value;
             if(!name) return alert("Name required");
             try {
-                const r = await api.createRoute({ name });
-                alert(`Created Route ID: #${r.id}`);
+                const r = await api.createRoute({ name: name, startStopId: 1, endStopId: 2, distanceKm: 10.0 });
+                alert(`Created Route ID: #${r.routeId || r.id}`);
             } catch(e) { alert("Failed to create route"); }
         }
 
@@ -437,7 +439,7 @@
         let demandChartInstance = null;
         async function loadPredictions() {
             try {
-                const response = await fetch(`${api.baseUrl}/api/predictions/busy-routes`, {
+                const response = await fetch(`http://localhost:8080/api/predictions/busy-routes`, {
                     headers: api.getHeaders()
                 });
                 const predictions = await response.json();
@@ -482,7 +484,7 @@
 
         async function loadAnomalies() {
             try {
-                const response = await fetch(`${api.baseUrl}/api/anomalies`, {
+                const response = await fetch(`http://localhost:8080/api/anomalies`, {
                     headers: api.getHeaders()
                 });
                 const anomalies = await response.json();
@@ -511,7 +513,7 @@
         async function loadAnalytics() {
             try {
                 // KPIs
-                const kpiRes = await fetch(`${api.baseUrl}/api/analytics/kpi-summary`);
+                const kpiRes = await fetch(`http://localhost:8080/api/analytics/kpi-summary`);
                 const kpi = await kpiRes.json();
                 document.getElementById('kpiRevenue').innerText = `₹${kpi.totalRevenue}`;
                 document.getElementById('kpiBookings').innerText = kpi.totalBookings;
@@ -519,7 +521,7 @@
                 document.getElementById('kpiUsers').innerText = kpi.registeredUsers;
 
                 // Revenue Chart
-                const revRes = await fetch(`${api.baseUrl}/api/analytics/daily-revenue`);
+                const revRes = await fetch(`http://localhost:8080/api/analytics/daily-revenue`);
                 const revData = await revRes.json();
                 new Chart(document.getElementById('revenueChart'), {
                     type: 'line',
@@ -530,7 +532,7 @@
                 });
 
                 // Route Chart
-                const routeRes = await fetch(`${api.baseUrl}/api/analytics/bookings-per-route`);
+                const routeRes = await fetch(`http://localhost:8080/api/analytics/bookings-per-route`);
                 const routeData = await routeRes.json();
                 new Chart(document.getElementById('routeChart'), {
                     type: 'bar',
@@ -541,7 +543,7 @@
                 });
 
                 // Payment Breakdown
-                const payRes = await fetch(`${api.baseUrl}/api/analytics/payment-breakdown`);
+                const payRes = await fetch(`http://localhost:8080/api/analytics/payment-breakdown`);
                 const payData = await payRes.json();
                 new Chart(document.getElementById('paymentChart'), {
                     type: 'doughnut',
@@ -552,7 +554,7 @@
                 });
 
                 // Hourly Chart
-                const hourlyRes = await fetch(`${api.baseUrl}/api/analytics/hourly-bookings`);
+                const hourlyRes = await fetch(`http://localhost:8080/api/analytics/hourly-bookings`);
                 const hourlyData = await hourlyRes.json();
                 new Chart(document.getElementById('hourlyChart'), {
                     type: 'line',
@@ -566,7 +568,7 @@
 
         async function loadDrivers() {
             try {
-                const response = await fetch(`${api.baseUrl}/api/drivers`);
+                const response = await fetch(`http://localhost:8080/api/drivers`);
                 const drivers = await response.json();
                 const tbody = document.getElementById('driverTbody');
                 tbody.innerHTML = '';
@@ -612,7 +614,7 @@
             if(!name || !phone || !license) return alert("Required fields missing");
             
             try {
-                await fetch(`${api.baseUrl}/api/drivers`, {
+                await fetch(`http://localhost:8080/api/drivers`, {
                     method: 'POST',
                     headers: api.getHeaders(),
                     body: JSON.stringify({ name, phone, licenseNumber: license, status: 'ACTIVE', rating: 5.0, totalTrips: 0 })
@@ -626,14 +628,14 @@
         async function assignBus(driverId, busId) {
             if(!busId) return;
             try {
-                await fetch(`${api.baseUrl}/api/drivers/${driverId}/assign-bus/${busId}`, { method: 'PUT', headers: api.getHeaders() });
+                await fetch(`http://localhost:8080/api/drivers/${driverId}/assign-bus/${busId}`, { method: 'PUT', headers: api.getHeaders() });
                 loadDrivers();
             } catch(e) { alert("Failed to assign bus"); }
         }
 
         async function updateDriverStatus(driverId, status) {
             try {
-                await fetch(`${api.baseUrl}/api/drivers/${driverId}/status`, { 
+                await fetch(`http://localhost:8080/api/drivers/${driverId}/status`, { 
                     method: 'PUT', headers: Object.assign({}, api.getHeaders(), {'Content-Type': 'application/json'}),
                     body: JSON.stringify({status})
                 });
@@ -689,7 +691,7 @@
 
         async function loadLostItems() {
             try {
-                const response = await fetch(`${api.baseUrl}/api/lost-and-found`);
+                const response = await fetch(`http://localhost:8080/api/lost-and-found`);
                 const items = await response.json();
                 const tbody = document.getElementById('lostItemsTbody');
                 tbody.innerHTML = '';
@@ -723,12 +725,18 @@
 
         async function updateLostItemStatus(id, newStatus) {
             try {
-                await fetch(`${api.baseUrl}/api/lost-and-found/${id}/status?status=${newStatus}`, { method: 'PUT', headers: api.getHeaders() });
+                await fetch(`http://localhost:8080/api/lost-and-found/${id}/status?status=${newStatus}`, { method: 'PUT', headers: api.getHeaders() });
                 loadLostItems();
             } catch(e) { alert("Failed to update status"); }
         }
 
         setTimeout(() => { loadPredictions(); loadAnomalies(); loadAnalytics(); loadDrivers(); loadLostItems(); initAdminMap(); }, 1000);
+        setInterval(() => {
+            loadPredictions();
+            loadAnomalies();
+            loadAnalytics();
+            loadLostItems();
+        }, 5000); // 5 sec live-updating for Admin Dashboard
     </script>
 </body>
 </html>

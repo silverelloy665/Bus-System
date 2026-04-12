@@ -10,7 +10,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/favorites")
-@CrossOrigin(origins = "*")
+
 @SuppressWarnings("null")
 public class FavoriteRouteController {
 

@@ -10,7 +10,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/lost-and-found")
-@CrossOrigin(origins = "*")
 @SuppressWarnings("null")
 public class LostAndFoundController {
 
@@ -29,9 +28,9 @@ public class LostAndFoundController {
     }
 
     @PutMapping("/{id}/status")
-    public ResponseEntity<?> updateStatus(@PathVariable Long id, @RequestBody java.util.Map<String, String> body) {
+    public ResponseEntity<?> updateStatus(@PathVariable Long id, @RequestParam String status) {
         return lostItemRepository.findById(id).map(item -> {
-            item.setStatus(body.get("status"));
+            item.setStatus(status);
             return ResponseEntity.ok(lostItemRepository.save(item));
         }).orElse(ResponseEntity.notFound().build());
     }

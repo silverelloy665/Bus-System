@@ -207,7 +207,7 @@
             <div class="grid-2">
                 <div>
                     <label>From Stop:</label>
-                    <select id="fromStop" onchange="updateFare()"><option value="">-- Loading Stops --</option></select>
+                    <select id="fromStop" onchange="onFromStopChange()"><option value="">-- Loading Stops --</option></select>
                 </div>
                 <div>
                     <label>To Stop:</label>
@@ -695,6 +695,22 @@
         }
 
         let currentRouteId = null;
+
+        function onFromStopChange() {
+            const stopId = document.getElementById('fromStop').value;
+            if (stopId) {
+                const stop = stopsCache.find(s => parseInt(s.stopId) === parseInt(stopId));
+                if (stop && stop.lat && stop.lng) {
+                    currentUser.currentLat = stop.lat;
+                    currentUser.currentLng = stop.lng;
+                    if (map) {
+                        map.setView([stop.lat, stop.lng], 13);
+                    }
+                    loadBuses();
+                }
+            }
+            updateFare();
+        }
 
         async function updateFare() {
             const fromId = document.getElementById('fromStop').value;

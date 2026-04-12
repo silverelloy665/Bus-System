@@ -2,6 +2,11 @@ const BASE_URL = 'http://localhost:8080/api';
 
 const api = {
     // Utilities
+    getHeaders() {
+        return {
+            'Content-Type': 'application/json'
+        };
+    },
     notify(title, body) {
         if ('Notification' in window && navigator.serviceWorker) {
             if (Notification.permission === 'granted') {
@@ -104,6 +109,25 @@ const api = {
     async getAllStops() {
         const res = await fetch(`${BASE_URL}/stops`);
         if (!res.ok) throw new Error('Failed to fetch stops');
+        return res.json();
+    },
+    async createStop(stopData) {
+        const res = await fetch(`${BASE_URL}/stops`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(stopData)
+        });
+        if (!res.ok) throw new Error('Failed to create stop');
+        return res.json();
+    },
+    // Routes
+    async createRoute(routeData) {
+        const res = await fetch(`${BASE_URL}/routes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(routeData)
+        });
+        if (!res.ok) throw new Error('Failed to create route');
         return res.json();
     }
 };

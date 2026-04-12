@@ -8,7 +8,7 @@ import java.util.Arrays;
 
 @RestController
 @RequestMapping("/api/shared-rides")
-@CrossOrigin(origins = "*")
+
 public class SharedRideController {
 
     @GetMapping("/available")

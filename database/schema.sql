@@ -1,138 +1,110 @@
--- Bus Booking System Database Schema
+-- Bus Booking System Database Schema (Fully Normalized - 1NF, 2NF, 3NF applied)
 
--- Create Users/Customers Table
+-- 1. Customers Table (Base Entity)
 CREATE TABLE IF NOT EXISTS customers (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     phone VARCHAR(15),
-    password VARCHAR(255) NOT NULL,
-    address VARCHAR(255),
-    city VARCHAR(50),
-    state VARCHAR(50),
-    postal_code VARCHAR(10),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create Buses Table
+-- 2. Buses Table (Base Entity)
 CREATE TABLE IF NOT EXISTS buses (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    bus_name VARCHAR(100) NOT NULL,
     bus_number VARCHAR(20) UNIQUE NOT NULL,
     capacity INT NOT NULL,
     bus_type VARCHAR(50),
     operator_name VARCHAR(100),
     ac_status BOOLEAN DEFAULT FALSE,
-    amenities VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create Routes Table
+-- 3. Amenities Table (Base Entity to resolve 1NF violation of comma-separated string)
+CREATE TABLE IF NOT EXISTS amenities (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) UNIQUE NOT NULL
+);
+
+-- 4. Bus Amenities Mapping (Junction pattern for Many-to-Many - 1NF/2NF)
+CREATE TABLE IF NOT EXISTS bus_amenities (
+    bus_id INT NOT NULL,
+    amenity_id INT NOT NULL,
+    PRIMARY KEY (bus_id, amenity_id),
+    FOREIGN KEY (bus_id) REFERENCES buses(id) ON DELETE CASCADE,
+    FOREIGN KEY (amenity_id) REFERENCES amenities(id) ON DELETE CASCADE
+);
+
+-- 5. Stops Table (Extracted to resolve Transitive Dependency in Routes - 3NF)
+CREATE TABLE IF NOT EXISTS stops (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    city VARCHAR(50) NOT NULL,
+    state VARCHAR(50) NOT NULL,
+    latitude DECIMAL(10, 8),
+    longitude DECIMAL(11, 8)
+);
+
+-- 6. Routes Table (Simplified for 3NF - detailed stops are mapped below)
 CREATE TABLE IF NOT EXISTS routes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     route_name VARCHAR(100) NOT NULL,
-    starting_point VARCHAR(100) NOT NULL,
-    ending_point VARCHAR(100) NOT NULL,
-    distance_km INT,
-    estimated_duration_minutes INT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create Schedules Table
+-- 7. Route Stops (Junction mapping a continuous path without repeating route logic)
+CREATE TABLE IF NOT EXISTS route_stops (
+    route_id INT NOT NULL,
+    stop_id INT NOT NULL,
+    stop_sequence INT NOT NULL,
+    distance_from_start_km DECIMAL(6, 2) DEFAULT 0.00,
+    PRIMARY KEY (route_id, stop_id),
+    FOREIGN KEY (route_id) REFERENCES routes(id) ON DELETE CASCADE,
+    FOREIGN KEY (stop_id) REFERENCES stops(id) ON DELETE CASCADE
+);
+
+-- 8. Schedules Table (Associates Buses with Routes over Time)
 CREATE TABLE IF NOT EXISTS schedules (
     id INT AUTO_INCREMENT PRIMARY KEY,
     bus_id INT NOT NULL,
     route_id INT NOT NULL,
+    departure_date DATE NOT NULL,
     departure_time TIME NOT NULL,
     arrival_time TIME NOT NULL,
-    departure_date DATE NOT NULL,
-    available_seats INT NOT NULL,
     price DECIMAL(10, 2) NOT NULL,
-    status VARCHAR(50) DEFAULT 'AVAILABLE',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    status VARCHAR(20) DEFAULT 'AVAILABLE',
+    UNIQUE KEY unique_schedule (bus_id, route_id, departure_date, departure_time),
     FOREIGN KEY (bus_id) REFERENCES buses(id),
-    FOREIGN KEY (route_id) REFERENCES routes(id),
-    UNIQUE KEY unique_schedule (bus_id, route_id, departure_date, departure_time)
+    FOREIGN KEY (route_id) REFERENCES routes(id)
 );
 
--- Create Bookings Table
+-- 9. Bookings Table (Transaction Entity)
 CREATE TABLE IF NOT EXISTS bookings (
     id INT AUTO_INCREMENT PRIMARY KEY,
     customer_id INT NOT NULL,
     schedule_id INT NOT NULL,
-    seat_numbers VARCHAR(255) NOT NULL,
-    number_of_seats INT NOT NULL,
     total_price DECIMAL(10, 2) NOT NULL,
-    booking_status VARCHAR(50) DEFAULT 'CONFIRMED',
-    payment_status VARCHAR(50) DEFAULT 'PENDING',
+    booking_status VARCHAR(20) DEFAULT 'CONFIRMED',
     booking_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (customer_id) REFERENCES customers(id),
     FOREIGN KEY (schedule_id) REFERENCES schedules(id)
 );
 
--- Create Payments Table
-CREATE TABLE IF NOT EXISTS payments (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+-- 10. Booking Seats (Resolves 1NF violation of array in 'seat_numbers' column)
+CREATE TABLE IF NOT EXISTS booking_seats (
     booking_id INT NOT NULL,
-    customer_id INT NOT NULL,
-    amount DECIMAL(10, 2) NOT NULL,
-    payment_method VARCHAR(50),
-    transaction_id VARCHAR(100),
-    payment_status VARCHAR(50) DEFAULT 'PENDING',
-    payment_date TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (booking_id) REFERENCES bookings(id),
-    FOREIGN KEY (customer_id) REFERENCES customers(id)
-);
-
--- Create Reviews Table
-CREATE TABLE IF NOT EXISTS reviews (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    booking_id INT NOT NULL,
-    customer_id INT NOT NULL,
-    schedule_id INT NOT NULL,
-    rating INT CHECK (rating >= 1 AND rating <= 5),
-    review_text TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (booking_id) REFERENCES bookings(id),
-    FOREIGN KEY (customer_id) REFERENCES customers(id),
-    FOREIGN KEY (schedule_id) REFERENCES schedules(id)
-);
-
--- Create Seats Table (if you need to track individual seats)
-CREATE TABLE IF NOT EXISTS seats (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    bus_id INT NOT NULL,
     seat_number VARCHAR(10) NOT NULL,
-    seat_type VARCHAR(50),
-    is_available BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (bus_id) REFERENCES buses(id),
-    UNIQUE KEY unique_seat (bus_id, seat_number)
+    PRIMARY KEY (booking_id, seat_number),
+    FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE
 );
 
--- Create Admins Table
-CREATE TABLE IF NOT EXISTS admins (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(100) UNIQUE NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role VARCHAR(50) DEFAULT 'ADMIN',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+-- 11. Bus Live Locations Table (For Live Map Tracking isolation)
+CREATE TABLE IF NOT EXISTS bus_live_locations (
+    bus_id INT PRIMARY KEY,
+    current_lat DECIMAL(10, 8) NOT NULL,
+    current_lng DECIMAL(11, 8) NOT NULL,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (bus_id) REFERENCES buses(id) ON DELETE CASCADE
 );
-
--- Create indexes for better query performance
-CREATE INDEX idx_customer_email ON customers(email);
-CREATE INDEX idx_schedule_date ON schedules(departure_date);
-CREATE INDEX idx_booking_customer ON bookings(customer_id);
-CREATE INDEX idx_booking_schedule ON bookings(schedule_id);
-CREATE INDEX idx_payment_booking ON payments(booking_id);
-CREATE INDEX idx_review_customer ON reviews(customer_id);
-CREATE INDEX idx_seat_bus ON seats(bus_id);

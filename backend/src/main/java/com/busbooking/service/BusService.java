@@ -48,7 +48,7 @@ public class BusService {
     public List<Bus> getNearbyBuses(Double lat, Double lng) {
         return busRepository.findAll().stream()
             .filter(bus -> bus.getCurrentLat() != null && bus.getCurrentLng() != null)
-            .filter(bus -> Math.sqrt(Math.pow(bus.getCurrentLat()-lat,2)+Math.pow(bus.getCurrentLng()-lng,2)) < 0.05)
+            .filter(bus -> Math.sqrt(Math.pow(bus.getCurrentLat()-lat,2)+Math.pow(bus.getCurrentLng()-lng,2)) < 1.0)
             .collect(Collectors.toList());
     }
 }

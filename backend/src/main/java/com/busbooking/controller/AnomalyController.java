@@ -9,7 +9,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/anomalies")
-@CrossOrigin(origins = "*")
+
 public class AnomalyController {
 
     @Autowired
